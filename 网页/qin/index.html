@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>琴 · 七弦十三徽</title>
+<style>
+:root{
+  --bg:#050c0e;
+  --panel:rgba(9,22,25,.72);
+  --main:#009E9D;
+  --teal:#00c9c2;
+  --hi:#8ff5ec;
+  --ink:#e9f6f5;
+  --dim:#6f8f92;
+  --line:rgba(0,201,194,.18);
+  --mono:ui-monospace,SFMono-Regular,"Cascadia Mono",Consolas,"Liberation Mono",monospace;
+  --sans:"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,-apple-system,sans-serif;
+  --serif:"Songti SC","SimSun","Noto Serif SC",serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  margin:0;color:var(--ink);background:var(--bg);
+  font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(1100px 700px at 78% -12%, rgba(0,158,157,.16), transparent 62%),
+    radial-gradient(900px 600px at 6% 108%, rgba(0,158,157,.09), transparent 60%);
+}
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:90;
+  background:repeating-linear-gradient(180deg,rgba(0,201,194,.05) 0 1px,transparent 1px 3px);
+  opacity:.5;
+}
+.wordmark{
+  position:fixed;inset:0;pointer-events:none;z-index:1;
+  font-size:clamp(120px,22vw,300px);font-weight:700;color:rgba(0,201,194,.028);
+  letter-spacing:.3em;line-height:.86;
+  display:flex;align-items:center;justify-content:center;
+  transform:rotate(-14deg);user-select:none;
+}
+
+.wrap{position:relative;z-index:2;max-width:1000px;margin:0 auto;padding:0 22px 70px}
+
+/* 顶栏 */
+.bar{
+  display:flex;align-items:center;gap:14px;
+  padding:20px 0 17px;border-bottom:1px solid var(--line);
+  font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--dim);
+  margin-bottom:44px;
+}
+.bar a{color:var(--hi);text-decoration:none;opacity:.85}
+.bar a:hover{opacity:1;text-decoration:underline;text-underline-offset:4px}
+.bar .sep{opacity:.4}
+.bar .sp{flex:1}
+.badge{
+  font-size:10px;letter-spacing:.2em;color:var(--teal);
+  border:1px solid rgba(0,201,194,.3);padding:3px 9px;border-radius:2px;
+  opacity:.85;white-space:nowrap;
+}
+
+/* 标题 */
+h1{
+  font-size:clamp(38px,6.4vw,62px);font-weight:700;margin:0 0 14px;
+  letter-spacing:.04em;line-height:1.06;
+}
+.lede{
+  margin:0 0 8px;color:#a8c6c6;font-size:15px;line-height:1.85;max-width:44em;
+}
+.lede em{color:var(--hi);font-style:normal}
+.hintline{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--dim);
+  margin:12px 0 30px;
+}
+
+/* 琴面 */
+.presetbar{
+  display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+  margin:-8px 0 16px;
+}
+.presetbar .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--dim)}
+.mode.pr{border-color:rgba(0,201,194,.4);color:var(--hi);background:rgba(0,158,157,.1)}
+.mode.pr:hover{background:rgba(0,158,157,.2)}
+.presetbar .pnote{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:rgba(111,143,146,.7)}
+
+/* 回放时当前音的提示 */
+.glyph.on{
+  border-color:rgba(143,245,236,.85);
+  background:rgba(0,158,157,.26);
+  box-shadow:0 0 0 1px rgba(143,245,236,.35),0 0 18px rgba(143,245,236,.28);
+}
+
+.board{
+  position:relative;border:1px solid var(--line);border-radius:3px;
+  background:linear-gradient(180deg,rgba(0,158,157,.05),rgba(5,12,14,.2) 42%,rgba(0,158,157,.04));
+  padding:10px 6px 4px;margin-bottom:22px;
+  box-shadow:inset 0 0 90px rgba(0,158,157,.05);
+}
+.board svg{display:block;width:100%;height:auto}
+.board .glow{
+  position:absolute;inset:0;pointer-events:none;border-radius:3px;
+  background:radial-gradient(60% 70% at 50% 45%,rgba(0,201,194,.07),transparent 70%);
+}
+
+/* 音色切换 */
+.modes{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center}
+.modes .lbl{
+  font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--dim);margin-right:4px;
+}
+.mode{
+  font-family:var(--sans);font-size:12.5px;letter-spacing:.08em;
+  color:#9fc0c0;background:transparent;cursor:pointer;
+  border:1px solid rgba(0,201,194,.22);border-radius:2px;
+  padding:7px 14px;transition:all .18s;
+}
+.mode:hover{border-color:rgba(0,201,194,.5);color:var(--hi)}
+.mode[aria-pressed="true"]{
+  background:rgba(0,158,157,.16);border-color:rgba(0,201,194,.62);color:var(--hi);
+}
+.mode small{opacity:.6;font-family:var(--mono);font-size:9.5px;margin-left:5px;letter-spacing:.12em}
+
+/* 谱面 */
+/* 七弦按钮：给触屏用，点一下弹空弦 */
+.strings{display:flex;gap:5px;margin-top:9px;margin-bottom:12px}
+.strings button{
+  flex:1;padding:11px 0;
+  font-family:var(--serif),serif;font-size:13px;letter-spacing:.1em;
+  color:rgba(200,235,235,.82);
+  background:linear-gradient(180deg,rgba(0,201,194,.07),rgba(0,201,194,.02));
+  border:1px solid rgba(0,201,194,.18);border-radius:3px;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:background .12s,border-color .12s;
+}
+.strings button:hover{background:rgba(0,201,194,.12);border-color:rgba(0,201,194,.3)}
+.strings button:active{background:rgba(0,201,194,.2);border-color:rgba(0,201,194,.5);color:#eaf7f6}
+
+.score-wrap{
+  border:1px solid var(--line);border-radius:3px;
+  background:linear-gradient(180deg,rgba(242,238,228,.045),rgba(5,12,14,.25));
+  padding:16px 16px 12px;margin-bottom:20px;
+}
+.score-head{
+  display:flex;align-items:baseline;gap:12px;margin-bottom:14px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--dim);
+}
+.score-head .name{color:var(--main)}
+.score-head .sp{flex:1}
+.score-head .tbtns{display:flex;gap:6px;flex-wrap:wrap}
+.mode.tb{padding:4px 10px;font-size:11px;letter-spacing:.1em}
+.titlebar{
+  display:flex;align-items:baseline;gap:12px;margin:-4px 0 12px;
+  padding:8px 10px;border-left:2px solid rgba(0,201,194,.5);
+  background:rgba(0,158,157,.07);
+  font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--dim);
+}
+.titlebar[hidden]{display:none}
+.titlebar .tt{font-family:var(--sans);font-size:13.5px;letter-spacing:.06em;color:var(--ink)}
+.titlebar .sp{flex:1}
+.score{
+  display:flex;gap:10px;overflow-x:auto;padding:4px 2px 10px;
+  min-height:96px;scroll-behavior:smooth;
+}
+.score::-webkit-scrollbar{height:4px}
+.score::-webkit-scrollbar-thumb{background:rgba(0,201,194,.28);border-radius:2px}
+.score .empty{
+  font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:rgba(111,143,146,.7);
+  align-self:center;padding:24px 4px;
+}
+
+/* 一个减字 */
+.glyph{
+  flex:0 0 auto;width:66px;
+  border:1px solid rgba(0,201,194,.24);border-radius:2px;
+  background:rgba(0,158,157,.055);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:8px 4px 7px;gap:2px;
+  animation:glyphIn .3s cubic-bezier(.2,.9,.3,1.35);
+}
+@keyframes glyphIn{
+  from{opacity:0;transform:translateY(7px) scale(.9)}
+  to{opacity:1;transform:none}
+}
+.glyph .top{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;
+  color:rgba(143,245,236,.72);line-height:1;
+}
+.glyph .mid{
+  font-size:27px;line-height:1.02;color:var(--ink);
+  font-family:var(--serif);font-weight:600;
+}
+.glyph .bot{
+  font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--dim);line-height:1;
+}
+
+/* 音名反馈 */
+.readout{
+  display:flex;gap:18px;flex-wrap:wrap;align-items:baseline;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;color:var(--dim);
+  padding:10px 2px 0;border-top:1px solid rgba(0,201,194,.1);margin-top:6px;min-height:26px;
+}
+.readout b{color:var(--hi);font-weight:400}
+
+/* 底部 */
+.foot{
+  margin-top:52px;padding-top:16px;border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:rgba(111,143,146,.75);
+  line-height:2;
+}
+.egg{
+  margin-top:14px;padding:12px 14px;
+  border-left:2px solid rgba(0,201,194,.5);
+  background:rgba(0,158,157,.07);
+  font-family:var(--serif);font-size:13.5px;line-height:1.9;color:#cfeeea;
+  display:none;
+}
+.egg.on{display:block;animation:glyphIn .5s ease}
+
+.string{transition:stroke .25s}
+.string.vibe{
+  animation:stringVibe .46s cubic-bezier(.3,.8,.4,1) 1;
+  filter:drop-shadow(0 0 6px rgba(143,245,236,.55));
+  stroke:#b9fff8;
+}
+@keyframes stringVibe{
+  0%{transform:translateY(0)}
+  18%{transform:translateY(-2.4px)}
+  36%{transform:translateY(1.8px)}
+  54%{transform:translateY(-1.1px)}
+  72%{transform:translateY(.6px)}
+  100%{transform:translateY(0)}
+}
+
+@media (max-width:720px){
+  /* 七条弦挤在 330px 里会误触，给横向滑动 */
+  .board{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding-bottom:26px}
+  .board svg{width:760px;min-width:760px}
+  .board::after{
+    content:"← 左右滑动看全琴 →";
+    position:absolute;left:50%;transform:translateX(-50%);bottom:7px;
+    font-family:var(--mono);font-size:9px;letter-spacing:.18em;
+    color:rgba(0,201,194,.6);white-space:nowrap;pointer-events:none;
+  }
+  .wrap{padding:0 16px 56px}
+  .bar{margin-bottom:32px;font-size:10px;letter-spacing:.12em;gap:10px}
+  .board{padding:6px 2px 2px}
+  .glyph{width:58px}
+  .glyph .mid{font-size:23px}
+  .modes{gap:6px}
+  .mode{padding:6px 11px;font-size:12px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;scroll-behavior:auto!important}
+}
+</style>
+<meta name="theme-color" content="#050c0e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="旅行驿站">
+<link rel="manifest" href="../manifest.json">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<style>@media (hover:none){html{-webkit-tap-highlight-color:transparent}*{-webkit-touch-callout:none}input,textarea,select{-webkit-touch-callout:default;user-select:text;-webkit-user-select:text}}</style>
+</head>
+<body>
+<div class="wordmark" aria-hidden="true">琴</div>
+
+<div class="wrap">
+  <div class="bar">
+    <a href="../index.html">← 终端</a>
+    <span class="sep">/</span>
+    <span>02 · 琴</span>
+    <span class="sp"></span>
+    <span class="badge">只读镜像</span>
+  </div>
+
+  <h1>琴</h1>
+  <p class="lede">
+    七弦，十三徽。弦是横的，徽是竖着数的。点弦身是<em>散音</em>，点徽位是<em>按音</em>，
+    开到泛音再点徽，出来的是<em>泛音</em>——比按音干净，像隔着水听见的。
+  </p>
+  <p class="hintline">正调 · F 宫 · 一弦 C3 → 七弦 D4 · 一弦一徽可达 C6</p>
+
+  <div class="modes">
+    <span class="lbl">按法</span>
+    <button class="mode" type="button" data-mode="san" aria-pressed="true">散音<small>SAN</small></button>
+    <button class="mode" type="button" data-mode="an" aria-pressed="false">按音<small>AN</small></button>
+    <button class="mode" type="button" data-mode="fan" aria-pressed="false">泛音<small>FAN</small></button>
+  </div>
+
+  <div class="presetbar">
+    <span class="lbl">曲目</span>
+    <button class="mode pr" type="button" data-preset="lixiang">理想流体<small>琴歌</small></button>
+    <span class="pnote">依词度曲，不是原曲旋律的转写</span>
+  </div>
+
+  <div class="board" id="board">
+    <div class="glow"></div>
+    <svg id="qin" viewBox="0 0 1000 444" role="img" aria-label="七弦十三徽琴面"></svg>
+  </div>
+
+  <div class="strings" id="strings" role="group" aria-label="七根弦（点一下弹空弦）">
+    <button type="button" data-s="0">一</button>
+    <button type="button" data-s="1">二</button>
+    <button type="button" data-s="2">三</button>
+    <button type="button" data-s="3">四</button>
+    <button type="button" data-s="4">五</button>
+    <button type="button" data-s="5">六</button>
+    <button type="button" data-s="6">七</button>
+  </div>
+
+  <div class="score-wrap">
+    <div class="score-head">
+      <span class="name">减字谱</span>
+      <span>SCORE</span>
+      <span class="sp"></span>
+      <span class="tbtns">
+        <button class="mode tb" type="button" id="play">▷ 回放</button>
+        <button class="mode tb" type="button" id="export">导出</button>
+        <button class="mode tb" type="button" id="importBtn">导入</button>
+        <button class="mode tb" type="button" id="clear">清空</button>
+      </span>
+      <input type="file" id="fileIn" accept=".json,application/json" hidden>
+    </div>
+    <div class="titlebar" id="titlebar" hidden>
+      <span class="tt" id="ttTitle">未命名谱</span>
+      <span class="tm" id="ttMeta"></span>
+      <span class="sp"></span>
+      <button class="mode tb" type="button" id="unload" hidden>退出曲目</button>
+    </div>
+    <div class="score" id="score">
+      <span class="empty">拨一下弦。记下来的东西会出现在这里。</span>
+    </div>
+    <div class="readout" id="readout"></div>
+  </div>
+
+  <div class="egg" id="egg">十三徽都走完了。<br>这一曲没有人听，也依然算数。</div>
+
+  <div class="foot">
+    防风 Zephyr · 形象来自「防风Zephyr」企划组 · 允许非商用二次分发<br>
+    声音是当场算出来的，没有音频文件；关掉页面就什么都不剩。
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- 音律 ---------- */
+  // 正调（F 宫）：一弦 C3 起
+  var OPEN = [130.81, 146.83, 174.61, 196.00, 220.00, 261.63, 293.66];
+  var NAMES = ["一","二","三","四","五","六","七"];
+
+  // 徽位：振动段占全弦的比例（第 n 徽 = 1/n 等分点）
+  // 频率倍数 = 1 / 比例；琴面上的位置 = 1 - 比例（一徽靠岳山，十三徽靠龙龈）
+  var HUI = {
+    1: 1/8, 2: 1/6, 3: 1/5, 4: 1/4, 5: 1/3,
+    6: 2/5, 7: 1/2,
+    8: 3/5, 9: 2/3, 10: 3/4, 11: 4/5, 12: 5/6, 13: 7/8
+  };
+  var HUI_NUM = ["一","二","三","四","五","六","七","八","九","十","十一","十二","十三"];
+  var THUMB = ["抹","挑","勾","剔","打","摘","托","擘"];
+
+  var PITCH = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+
+  function noteName(f){
+    var midi = Math.round(69 + 12 * Math.log(f / 440) / Math.LN2);
+    return { name: PITCH[((midi % 12) + 12) % 12], oct: Math.floor(midi / 12) - 1, midi: midi };
+  }
+  function freqOf(stringIdx, hui){
+    var base = OPEN[stringIdx];
+    if (!hui) return base;
+    return base / HUI[hui];
+  }
+
+  /* ---------- 发声：Karplus-Strong ---------- */
+  var ctx = null, master = null, cache = new Map(), cacheKeys = [], CACHE_MAX = 40;
+
+  function audio(){
+    if (!ctx){
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+      master = ctx.createGain();
+      master.gain.value = 0.9;
+      master.connect(ctx.destination);
+    }
+    if (ctx.state === "suspended") ctx.resume();
+    return ctx;
+  }
+
+  function synth(freq, kind){
+    var c = audio(); if (!c) return null;
+    var key = kind + ":" + freq.toFixed(2);
+    if (cache.has(key)) return cache.get(key);
+
+    var sr = c.sampleRate;
+    var dur = kind === "fan" ? 2.4 : 2.0;
+    var n = Math.floor(sr * dur);
+    var buf = c.createBuffer(1, n, sr);
+    var d = buf.getChannelData(0);
+
+    if (kind === "fan"){
+      // 泛音：接近正弦，起音极快，尾巴长
+      var w = 2 * Math.PI * freq / sr;
+      var ph = 0;
+      for (var i = 0; i < n; i++){
+        var t = i / sr;
+        var env = Math.exp(-t * 2.0);
+        var s = Math.sin(ph) * 0.86 + Math.sin(ph * 2) * 0.09;
+        d[i] = s * env * 0.34;
+        ph += w;
+      }
+    } else {
+      // Karplus-Strong：噪声激励 + 延迟线低通反馈
+      var N = Math.max(2, Math.round(sr / freq));
+      var line = new Float32Array(N);
+      var smooth = 0;
+      var bright = kind === "san" ? 0.30 : 0.46;   // 散音更暗，按音稍亮
+      for (var k = 0; k < N; k++){
+        var wn = Math.random() * 2 - 1;
+        smooth = smooth * bright + wn * (1 - bright);
+        line[k] = smooth;
+      }
+      var damp = kind === "san" ? 0.9982 : 0.9988;
+      var idx = 0, out = 0;
+      for (var m = 0; m < n; m++){
+        var cur = line[idx];
+        var nxt = line[(idx + 1) % N];
+        out = (cur + nxt) * 0.5 * damp;
+        line[idx] = out;
+        idx = (idx + 1) % N;
+        d[m] = cur * 0.5;
+      }
+      // 起音那一下加一点点木头感
+      for (var p = 0; p < Math.min(400, n); p++) d[p] *= (p / 400) * 0.5 + 0.5;
+    }
+
+    // 收尾淡出，避免切断时的爆音
+    var fade = Math.min(Math.floor(sr * 0.06), n);
+    for (var q = 0; q < fade; q++) d[n - 1 - q] *= q / fade;
+
+    cache.set(key, buf);
+    cacheKeys.push(key);
+    if (cacheKeys.length > CACHE_MAX){
+      cache.delete(cacheKeys.shift());
+    }
+    return buf;
+  }
+
+  function play(freq, kind){
+    var c = audio(); if (!c) return;
+    var buf = synth(freq, kind);
+    if (!buf) return;
+    var src = c.createBufferSource();
+    src.buffer = buf;
+    var g = c.createGain();
+    g.gain.value = kind === "fan" ? 0.95 : 1.0;
+    src.connect(g); g.connect(master);
+    src.start();
+    src.onended = function(){ try{ src.disconnect(); g.disconnect(); }catch(e){} };
+  }
+
+  /* ---------- 琴面绘制 ---------- */
+  var SVG = "http://www.w3.org/2000/svg";
+  var svg = document.getElementById("qin");
+  var X0 = 88, X1 = 912, SPAN = X1 - X0;
+  var Y0 = 86, GAP = 50;
+
+  function el(tag, attrs){
+    var e = document.createElementNS(SVG, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  // 琴身
+  svg.appendChild(el("rect", { x: X0 - 30, y: Y0 - 30, width: SPAN + 60, height: GAP * 6 + 60,
+    rx: 4, fill: "rgba(0,158,157,.028)", stroke: "rgba(0,201,194,.1)", "stroke-width": 1 }));
+
+  // 徽位刻度（竖线 + 圆点）
+  for (var h = 1; h <= 13; h++){
+    var hx = X0 + SPAN * (1 - HUI[h]);
+    var isSeven = h === 7;
+    var tickTop = Y0 - (isSeven ? 30 : 22);
+    var tickBot = Y0 + GAP * 6 + (isSeven ? 30 : 22);
+    svg.appendChild(el("line", {
+      x1: hx, y1: tickTop, x2: hx, y2: Y0 - 4,
+      stroke: isSeven ? "rgba(143,245,236,.4)" : "rgba(0,201,194,.26)",
+      "stroke-width": isSeven ? 1.2 : 1
+    }));
+    svg.appendChild(el("line", {
+      x1: hx, y1: Y0 + GAP * 6 + 4, x2: hx, y2: tickBot,
+      stroke: isSeven ? "rgba(143,245,236,.4)" : "rgba(0,201,194,.26)",
+      "stroke-width": isSeven ? 1.2 : 1
+    }));
+    svg.appendChild(el("circle", {
+      cx: hx, cy: Y0 - 34, r: isSeven ? 4.6 : 3.2,
+      fill: isSeven ? "rgba(143,245,236,.85)" : "rgba(0,201,194,.42)"
+    }));
+    var tn = el("text", {
+      x: hx, y: Y0 - 46, "text-anchor": "middle",
+      "font-size": 10, "font-family": "ui-monospace,Consolas,monospace",
+      fill: isSeven ? "rgba(143,245,236,.9)" : "rgba(111,143,146,.8)",
+      "letter-spacing": ".1em"
+    });
+    tn.textContent = HUI_NUM[h - 1];
+    svg.appendChild(tn);
+  }
+
+  // 七徽中线
+  svg.appendChild(el("line", {
+    x1: X0 + SPAN * 0.5, y1: Y0 - 4, x2: X0 + SPAN * 0.5, y2: Y0 + GAP * 6 + 4,
+    stroke: "rgba(143,245,236,.16)", "stroke-width": 1
+  }));
+
+  // 弦
+  for (var s = 0; s < 7; s++){
+    var sy = Y0 + s * GAP;
+    var thick = 2.5 - s * 0.18;
+
+    // 弦身（可见）
+    var strEl = el("line", {
+      x1: X0, y1: sy, x2: X1, y2: sy,
+      stroke: "rgba(143,245,236,.34)", "stroke-width": thick, "stroke-linecap": "round",
+      "class": "string", "data-str": s
+    });
+    svg.appendChild(strEl);
+    // 弦的点击热区（透明、更宽）
+    var hit = el("line", {
+      x1: X0, y1: sy, x2: X1, y2: sy,
+      stroke: "rgba(0,0,0,0)", "stroke-width": 34, "stroke-linecap": "butt",
+      style: "cursor:pointer", "data-s": s, "data-h": 0
+    });
+    svg.appendChild(hit);
+
+    // 左端弦号
+    var lb = el("text", {
+      x: X0 - 44, y: sy + 4.5, "text-anchor": "middle",
+      "font-size": 13, "font-family": "var(--serif)",
+      fill: "rgba(233,246,245,.5)"
+    });
+    lb.textContent = NAMES[s];
+    svg.appendChild(lb);
+  }
+
+  // 徽点热区（覆盖在弦上，点击时按「该弦 + 该徽」发声）
+  for (var s2 = 0; s2 < 7; s2++){
+    for (var h2 = 1; h2 <= 13; h2++){
+      var hx2 = X0 + SPAN * (1 - HUI[h2]);
+      var hy2 = Y0 + s2 * GAP;
+      var dot = el("circle", {
+        cx: hx2, cy: hy2, r: 15,
+        fill: "rgba(0,0,0,0)", style: "cursor:pointer",
+        "data-s": s2, "data-h": h2
+      });
+      svg.appendChild(dot);
+    }
+  }
+
+  // 端标
+  var sL = el("text", { x: X0, y: Y0 + GAP * 6 + 46, "text-anchor": "start",
+    "font-size": 10, "font-family": "ui-monospace,Consolas,monospace",
+    fill: "rgba(111,143,146,.65)", "letter-spacing": ".2em" });
+  sL.textContent = "龙龈";
+  svg.appendChild(sL);
+
+  var sR = el("text", { x: X1, y: Y0 + GAP * 6 + 46, "text-anchor": "end",
+    "font-size": 10, "font-family": "ui-monospace,Consolas,monospace",
+    fill: "rgba(111,143,146,.65)", "letter-spacing": ".2em" });
+  sR.textContent = "岳山";
+  svg.appendChild(sR);
+
+  /* ---------- 状态 ---------- */
+  var mode = "san";
+  var score = [];
+  var current = null;   // 当前载入的曲目 {title, sub, tempo, notes}
+  var touchedHui = {};
+  var playedCount = 0;
+
+  var elScore = document.getElementById("score");
+  var elOut = document.getElementById("readout");
+  var elEgg = document.getElementById("egg");
+
+  document.querySelectorAll(".mode[data-mode]").forEach(function(b){
+    b.addEventListener("click", function(){
+      mode = b.getAttribute("data-mode");
+      document.querySelectorAll(".mode[data-mode]").forEach(function(x){
+        x.setAttribute("aria-pressed", x === b ? "true" : "false");
+      });
+      hintMode();
+    });
+  });
+
+  function hintMode(){
+    var map = { san:"拨弦身——空弦，最沉的那一声。", an:"点徽位按下去，越靠岳山越高。", fan:"轻触徽位，出来的是泛音。" };
+    elOut.innerHTML = '<span>' + map[mode] + "</span>";
+  }
+  hintMode();
+
+  /* ---------- 曲库 ---------- */
+  // 一个音：s 弦(0-6) h 徽(0=散) k 音色 d 拍数
+  var PRESETS = {
+    lixiang: {
+      title: "理想流体",
+      sub: "琴歌 · 依词度曲",
+      tempo: 66,
+      notes: [
+        { s: 2, h: 0, k: "san", d: 2 },
+        { s: 1, h: 0, k: "san", d: 2 },
+
+        { s: 6, h: 7, k: "an",  d: 1 },
+        { s: 5, h: 7, k: "an",  d: 1 },
+        { s: 4, h: 0, k: "san", d: 2 },
+
+        { s: 3, h: 0, k: "san", d: 1 },
+        { s: 4, h: 0, k: "san", d: 1 },
+        { s: 5, h: 0, k: "san", d: 2 },
+
+        { s: 6, h: 0, k: "san", d: 1 },
+        { s: 5, h: 7, k: "an",  d: 1 },
+        { s: 4, h: 0, k: "san", d: 1 },
+        { s: 3, h: 0, k: "san", d: 1 },
+
+        { s: 2, h: 0, k: "san", d: 1 },
+        { s: 3, h: 0, k: "san", d: 1 },
+        { s: 4, h: 7, k: "an",  d: 1 },
+        { s: 5, h: 7, k: "an",  d: 1 },
+        { s: 6, h: 7, k: "an",  d: 1 },
+        { s: 5, h: 7, k: "an",  d: 1 },
+
+        { s: 4, h: 5, k: "fan", d: 1 },
+        { s: 5, h: 5, k: "fan", d: 1 },
+        { s: 6, h: 7, k: "fan", d: 3 },
+
+        { s: 5, h: 0, k: "san", d: 1 },
+        { s: 4, h: 0, k: "san", d: 1 },
+        { s: 3, h: 0, k: "san", d: 2 },
+
+        { s: 4, h: 7, k: "an",  d: 1 },
+        { s: 5, h: 7, k: "an",  d: 1 },
+        { s: 6, h: 0, k: "san", d: 2 },
+
+        { s: 0, h: 7, k: "an",  d: 1 },
+        { s: 1, h: 7, k: "an",  d: 1 },
+        { s: 2, h: 7, k: "an",  d: 1 },
+        { s: 3, h: 0, k: "san", d: 1 },
+
+        { s: 2, h: 0, k: "san", d: 4 }
+      ]
+    }
+  };
+
+  var elTitlebar = document.getElementById("titlebar");
+  var elTtTitle = document.getElementById("ttTitle");
+  var elTtMeta = document.getElementById("ttMeta");
+  var elUnload = document.getElementById("unload");
+  var elPlay = document.getElementById("play");
+  var elFile = document.getElementById("fileIn");
+
+  function buildScore(notes){
+    return notes.map(function(nt){
+      var nn = noteName(freqOf(nt.s, nt.h));
+      return {
+        string: nt.s, hui: nt.h, kind: nt.k, dur: nt.d || 1,
+        thumb: THUMB[(nt.s + nt.h + (nt.k === "fan" ? 3 : 0)) % THUMB.length],
+        note: nn.name + nn.oct
+      };
+    });
+  }
+
+  function showTitlebar(){
+    if (!current){ elTitlebar.hidden = true; return; }
+    elTitlebar.hidden = false;
+    elTtTitle.textContent = current.title;
+    var total = current.notes.reduce(function(a, b){ return a + (b.d || 1); }, 0);
+    elTtMeta.textContent = (current.sub ? current.sub + " · " : "") + total + " 拍 · " + current.tempo + " BPM";
+  }
+
+  function loadPreset(key){
+    var pr = PRESETS[key];
+    if (!pr) return;
+    stopPlay();
+    current = { key: key, title: pr.title, sub: pr.sub, tempo: pr.tempo, notes: pr.notes.slice() };
+    score = buildScore(current.notes);
+    renderScore();
+    showTitlebar();
+    elOut.innerHTML = "<span>载入 <b>" + pr.title + "</b> · " + score.length +
+      " 音 · 按「▷ 回放」听一遍。</span>";
+  }
+
+  /* ---------- 回放 ---------- */
+  var playTimer = null, playing = false, playIdx = 0;
+
+  function stopPlay(){
+    if (playTimer){ clearTimeout(playTimer); playTimer = null; }
+    if (playing){ playing = false; if (elPlay) elPlay.textContent = "▷ 回放"; }
+  }
+
+  function sound(sIdx, hui, kind){
+    play(freqOf(sIdx, hui), kind);
+    var strEl = svg.querySelector('.string[data-str="' + sIdx + '"]');
+    if (strEl){
+      strEl.classList.remove("vibe");
+      void strEl.getBBox();
+      strEl.classList.add("vibe");
+      setTimeout(function(){ strEl.classList.remove("vibe"); }, 480);
+    }
+  }
+
+  function highlight(i){
+    var box = document.getElementById("score");
+    var kids = box.querySelectorAll(".glyph");
+    for (var k = 0; k < kids.length; k++) kids[k].classList.remove("on");
+    if (kids[i]){
+      kids[i].classList.add("on");
+      box.scrollLeft = kids[i].offsetLeft - box.clientWidth / 2 + kids[i].offsetWidth / 2;
+    }
+  }
+
+  function startPlay(){
+    if (!score.length){
+      elOut.innerHTML = "<span>谱面是空的。先弹几个音，或载入一曲。</span>";
+      return;
+    }
+    var beat = 60000 / ((current && current.tempo) || 66);
+    playing = true;
+    playIdx = 0;
+    elPlay.textContent = "■ 停止";
+    var step = function(){
+      if (!playing) return;
+      if (playIdx >= score.length){
+        stopPlay();
+        elOut.innerHTML = "<span>曲终。</span>";
+        return;
+      }
+      var g = score[playIdx];
+      sound(g.string, g.hui, g.kind);
+      highlight(playIdx);
+      var wait = beat * (g.dur || 1);
+      playIdx++;
+      playTimer = setTimeout(step, wait);
+    };
+    step();
+  }
+
+  elPlay.addEventListener("click", function(){
+    if (playing) stopPlay(); else startPlay();
+  });
+
+  /* ---------- 导出 / 导入 ---------- */
+  function exportScore(){
+    if (!score.length){ elOut.innerHTML = "<span>没有可以导出的谱。</span>"; return; }
+    var data = {
+      v: 1,
+      app: "zephyr-qin",
+      title: (current && current.title) || "未命名谱",
+      sub: (current && current.sub) || "",
+      tempo: (current && current.tempo) || 66,
+      tuning: "正调 F 宫",
+      notes: score.map(function(g){
+        return { s: g.string, h: g.hui, k: g.kind, d: g.dur || 1 };
+      })
+    };
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    var stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    a.href = url;
+    a.download = "琴谱-" + data.title + "-" + stamp + ".json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+    elOut.innerHTML = "<span>已导出 <b>" + data.notes.length + "</b> 个音。</span>";
+  }
+
+  function importScore(file){
+    var rd = new FileReader();
+    rd.onload = function(){
+      try {
+        var data = JSON.parse(String(rd.result));
+        if (!data || !Array.isArray(data.notes)) throw new Error("缺少 notes 数组");
+        var notes = data.notes.filter(function(x){
+          return x && typeof x.s === "number" && x.s >= 0 && x.s < 7;
+        }).map(function(x){
+          return {
+            s: x.s,
+            h: (typeof x.h === "number" && x.h >= 0 && x.h <= 13) ? x.h : 0,
+            k: (x.k === "fan" || x.k === "an") ? x.k : "san",
+            d: Math.min(8, Math.max(0.25, Number(x.d) || 1))
+          };
+        });
+        if (!notes.length) throw new Error("没有有效音符");
+        stopPlay();
+        current = {
+          title: data.title || "导入的谱",
+          sub: data.sub || "",
+          tempo: Number(data.tempo) || 66,
+          notes: notes
+        };
+        score = buildScore(notes);
+        renderScore();
+        showTitlebar();
+        elOut.innerHTML = "<span>已导入 <b>" + score.length + "</b> 个音" +
+          (data.title ? "（" + data.title + "）" : "") + "。</span>";
+      } catch (e){
+        elOut.innerHTML = "<span>读不了这个文件：" + String((e && e.message) || e) + "</span>";
+      }
+    };
+    rd.readAsText(file);
+  }
+
+  document.getElementById("export").addEventListener("click", exportScore);
+  document.getElementById("importBtn").addEventListener("click", function(){ elFile.click(); });
+  elFile.addEventListener("change", function(){
+    if (elFile.files && elFile.files[0]) importScore(elFile.files[0]);
+    elFile.value = "";
+  });
+  elUnload.addEventListener("click", function(){
+    stopPlay();
+    current = null;
+    score = [];
+    renderScore();
+    showTitlebar();
+    elOut.innerHTML = "<span>已退出曲目，回到自由弹。</span>";
+  });
+
+  // 曲目入口
+  document.querySelectorAll("[data-preset]").forEach(function(b){
+    b.addEventListener("click", function(){ loadPreset(b.getAttribute("data-preset")); });
+  });
+
+  document.getElementById("clear").addEventListener("click", function(){
+    stopPlay();
+    score = [];
+    current = null;
+    renderScore();
+    showTitlebar();
+    elOut.innerHTML = "<span>谱面已清空。</span>";
+  });
+
+  /* ---------- 交互 ---------- */
+  svg.addEventListener("click", function(ev){
+    var t = ev.target;
+    var sAttr = t.getAttribute && t.getAttribute("data-s");
+    if (sAttr === null) return;
+    var sIdx = parseInt(sAttr, 10);
+    var hAttr = parseInt(t.getAttribute("data-h") || "0", 10);
+
+    var kind, hui;
+    if (mode === "san" || hAttr === 0){
+      kind = "san"; hui = 0;
+    } else if (mode === "fan"){
+      kind = "fan"; hui = hAttr;
+    } else {
+      kind = "an"; hui = hAttr;
+    }
+
+    if (mode === "san" && hAttr !== 0){
+      // 散音模式下点徽位：仍然弹空弦，但提示一下
+      elOut.innerHTML = "<span>散音不按徽。要按音请先切「按音」。</span>";
+    }
+
+    fire(sIdx, hui, kind);
+  });
+
+  function fire(sIdx, hui, kind){
+    stopPlay();
+    var f = freqOf(sIdx, hui);
+    play(f, kind);
+
+    var strEl = svg.querySelector('.string[data-str="' + sIdx + '"]');
+    if (strEl){
+      strEl.classList.remove("vibe");
+      void strEl.getBBox();
+      strEl.classList.add("vibe");
+      setTimeout(function(){ strEl.classList.remove("vibe"); }, 480);
+    }
+
+    var nn = noteName(f);
+    var thumb = THUMB[(sIdx + hui + playedCount) % THUMB.length];
+
+    score.push({
+      string: sIdx,
+      hui: hui,
+      kind: kind,
+      thumb: thumb,
+      note: nn.name + nn.oct
+    });
+    playedCount++;
+
+    if (hui) {
+      touchedHui[hui] = true;
+      if (Object.keys(touchedHui).length === 13) elEgg.classList.add("on");
+    }
+
+    renderScore();
+
+    var tops = { san: "散音", an: "按音", fan: "泛音" };
+    elOut.innerHTML =
+      "<span>弦 <b>" + NAMES[sIdx] + "</b></span>" +
+      "<span>" + (hui ? "徽 <b>" + HUI_NUM[hui - 1] + "</b>" : "空弦") + "</span>" +
+      "<span>音 <b>" + nn.name + nn.oct + "</b></span>" +
+      "<span>" + tops[kind] + "</span>" +
+      "<span>指法 <b>" + thumb + "</b></span>";
+  }
+
+  var elScoreBox = document.getElementById("score");
+
+  function renderScore(){
+    if (!score.length){
+      elScoreBox.innerHTML = '<span class="empty">拨一下弦。记下来的东西会出现在这里。</span>';
+      return;
+    }
+    var html = "";
+    for (var i = 0; i < score.length; i++){
+      var g = score[i];
+      var top = g.kind === "san" ? "散" : (g.kind === "fan" ? "泛" : "按");
+      if (g.hui && g.kind !== "san"){
+        top = (g.kind === "fan" ? "泛·" : "") + HUI_NUM[g.hui - 1];
+      }
+      html += '<div class="glyph">' +
+        '<span class="top">' + top + '</span>' +
+        '<span class="mid">' + g.thumb + '</span>' +
+        '<span class="bot">' + NAMES[g.string] + '弦 · ' + g.note + '</span>' +
+      '</div>';
+    }
+    elScoreBox.innerHTML = html;
+    elScoreBox.scrollLeft = elScoreBox.scrollWidth;
+  }
+
+  // 键盘：1-7 弹空弦，Q W E R T Y U 弹一弦各徽（简写）
+  document.addEventListener("keydown", function(e){
+    if (e.repeat) return;
+    var k = e.key.toLowerCase();
+    var idx = "1234567".indexOf(k);
+    if (idx >= 0){ fire(idx, 0, "san"); return; }
+    var hmap = { q:1, w:2, e:3, r:4, t:5, y:6, u:7, i:8, o:9, p:10 };
+    if (hmap[k] !== undefined){ fire(0, hmap[k], mode === "fan" ? "fan" : "an"); }
+  });
+
+  // 屏幕上那七根弦：点一下弹空弦（触屏主要靠这个）
+  var elStrings = document.getElementById("strings");
+  if (elStrings) elStrings.addEventListener("click", function(e){
+    var b = e.target.closest ? e.target.closest("button[data-s]") : null;
+    if (!b) return;
+    audio();
+    fire(+b.dataset.s, 0, "san");
+  });
+
+  // 首次交互解锁音频（不同浏览器策略不同）
+  ["pointerdown", "keydown"].forEach(function(ev){
+    window.addEventListener(ev, function once(){
+      audio();
+      window.removeEventListener(ev, once);
+    }, { once: true });
+  });
+})();
+</script>
+<script>try{localStorage.setItem('zephyr.visit.qin','1')}catch(e){}</script>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('../sw.js').catch(function(){})})}</script>
+</body>
+</html>
