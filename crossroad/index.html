@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>十字路口 · 防风 Zephyr</title>
+<style>
+:root{
+  --bg:#050c0e; --panel:#0a1416; --panel2:#0d1a1c;
+  --line:rgba(0,201,194,.16); --line2:rgba(0,201,194,.34);
+  --main:#009E9D; --hi:#8ff5ec; --ink:#e9f6f5;
+  --dim:#6f8f92; --mono:ui-monospace,"Cascadia Mono",Consolas,"Noto Sans Mono",monospace;
+  --serif:"Songti SC","SimSun",ui-serif,serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink)}
+body{
+  font-family:-apple-system,"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;min-height:100vh;
+  background:radial-gradient(1100px 560px at 50% 0%,rgba(0,158,157,.10),transparent 62%),var(--bg);
+}
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:9;
+  background:repeating-linear-gradient(180deg,rgba(0,0,0,.20) 0 1px,transparent 1px 3px);
+  opacity:.35;
+}
+.wrap{position:relative;z-index:2;max-width:820px;margin:0 auto;padding:0 24px 72px}
+
+.bar{
+  display:flex;align-items:center;gap:10px;
+  padding:26px 0 14px;border-bottom:1px solid var(--line);
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;color:var(--dim);
+}
+.bar .tid{color:var(--main);letter-spacing:.18em}
+.bar .sep{opacity:.4}
+.bar a{color:var(--dim);text-decoration:none;border-bottom:1px dotted rgba(111,143,146,.5)}
+.bar a:hover{color:var(--hi);border-color:var(--hi)}
+.bar .badge{margin-left:auto;padding:4px 10px;border:1px solid var(--line2);color:var(--main);font-size:10px;letter-spacing:.2em}
+
+h1{
+  font-size:clamp(34px,6vw,52px);font-weight:800;letter-spacing:.16em;margin:34px 0 14px;
+  background:linear-gradient(180deg,#ffffff,#9fe8e2 60%,#4fa9a4);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.lede{font-size:15px;line-height:1.9;color:#b9d8d6;max-width:600px;margin:0 0 6px}
+.lede em{color:var(--hi);font-style:normal}
+.meta{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:#4f7276;margin:14px 0 0}
+
+/* 十字 */
+.cross{
+  margin:34px 0 0;
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  grid-template-rows:auto auto auto;
+  grid-template-areas:
+    ".      north  ."
+    "west   hub    east"
+    ".      south  .";
+  gap:10px;
+  align-items:stretch;
+}
+.cell{position:relative}
+.arm{
+  display:flex;flex-direction:column;justify-content:center;gap:5px;
+  padding:16px 18px;border:1px solid var(--line);background:rgba(10,20,22,.6);
+  cursor:pointer;transition:border-color .2s,background .2s,transform .2s;
+  text-align:left;font-family:inherit;color:inherit;width:100%;
+}
+.arm:hover{border-color:rgba(0,201,194,.45);background:rgba(0,201,194,.07);transform:translateY(-1px)}
+.arm.on{border-color:var(--hi);background:rgba(0,201,194,.13);box-shadow:0 0 24px rgba(0,201,194,.16)}
+.arm .dir{
+  font-family:var(--mono);font-size:10px;letter-spacing:.28em;color:#4f7276;
+}
+.arm.on .dir{color:var(--main)}
+.arm .nm{font-size:16px;font-weight:600;letter-spacing:.08em}
+.arm .hint{font-size:11.5px;color:#6f8f92;letter-spacing:.04em}
+
+.arm.n{grid-area:north}
+.arm.w{grid-area:west}
+.arm.e{grid-area:east}
+.arm.s{grid-area:south}
+
+.hub{
+  grid-area:hub;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;min-height:96px;
+}
+.hub::before{
+  content:"";position:absolute;left:50%;top:50%;width:132px;height:132px;
+  transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(circle,rgba(0,158,157,.20),transparent 66%);
+  pointer-events:none;
+}
+.hub .dot{
+  width:9px;height:9px;border-radius:50%;background:var(--hi);
+  box-shadow:0 0 14px rgba(143,245,236,.8),0 0 34px rgba(0,201,194,.5);
+  animation:pulse 2.6s ease-in-out infinite;
+}
+@keyframes pulse{50%{transform:scale(1.5);opacity:.72}}
+.hub .you{
+  position:absolute;bottom:6px;left:50%;transform:translateX(-50%);
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;color:#4f7276;white-space:nowrap;
+}
+
+/* 内容 */
+.panel{
+  margin-top:30px;border:1px solid var(--line);background:rgba(10,20,22,.55);
+  padding:26px 26px 24px;min-height:230px;
+  opacity:0;transform:translateY(6px);transition:opacity .3s,transform .3s;
+}
+.panel.show{opacity:1;transform:none}
+.panel .tag{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.24em;color:var(--main);margin-bottom:12px;
+}
+.panel h2{
+  font-size:24px;font-weight:700;letter-spacing:.1em;margin:0 0 16px;
+  color:#eaf9f8;
+}
+.panel p{font-size:14.5px;line-height:2;color:#b9d8d6;margin:0 0 13px}
+.panel p.q{
+  font-family:var(--serif);font-size:16px;color:var(--hi);
+  border-left:2px solid rgba(0,158,157,.45);padding-left:14px;margin:18px 0;
+}
+.panel .end{
+  margin-top:18px;padding-top:14px;border-top:1px dashed var(--line);
+  font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:#4f7276;
+}
+.panel .empty{
+  display:flex;align-items:center;justify-content:center;height:178px;
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;color:#3f5c60;
+}
+
+footer{
+  margin-top:56px;padding-top:20px;border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:10.5px;line-height:2;letter-spacing:.08em;color:#3f5c60;
+}
+footer b{color:#5c8083;font-weight:400}
+@media (max-width:640px){
+  .wrap{padding:0 16px 56px}
+  .bar{flex-wrap:wrap;gap:8px}
+  .bar .badge{margin-left:0}
+  .cross{
+    grid-template-columns:1fr 1fr;grid-template-rows:auto auto auto;
+    grid-template-areas:
+      "north  east"
+      "west   south"
+      "hub    hub";
+  }
+  .hub{min-height:74px}
+  .arm{padding:13px 14px}
+  .arm .nm{font-size:15px}
+  .panel{padding:20px 18px 18px}
+  .panel h2{font-size:21px}
+}
+@media (prefers-reduced-motion:reduce){
+  body::after{display:none}
+  .hub .dot{animation:none}
+  .panel{transition:none}
+}
+</style>
+<meta name="theme-color" content="#050c0e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="旅行驿站">
+<link rel="manifest" href="../manifest.json">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<style>@media (hover:none){html{-webkit-tap-highlight-color:transparent}*{-webkit-touch-callout:none}input,textarea,select{-webkit-touch-callout:default;user-select:text;-webkit-user-select:text}}</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="bar">
+    <span class="tid">TER-M</span>
+    <span class="sep">/</span>
+    <a href="../index.html">← 终端</a>
+    <span class="sep">/</span>
+    <span>06 · 十字路口</span>
+    <span class="badge">只读镜像</span>
+  </div>
+
+  <h1>十字路口</h1>
+  <p class="lede">
+    四条路，四个答案。不是让你选一条走——是让你看看，<em>同一个地方从四个方向看过去，长什么样</em>。
+  </p>
+  <p class="meta">坐标未知 · 四个方向都通</p>
+
+  <div class="cross">
+    <button class="arm n" data-k="north">
+      <span class="dir">北 · NORTH</span>
+      <span class="nm">蚀</span>
+      <span class="hint">太阳在看别的地方</span>
+    </button>
+
+    <button class="arm w" data-k="west">
+      <span class="dir">西 · WEST</span>
+      <span class="nm">洄与溯黎</span>
+      <span class="hint">来处，和天亮之前</span>
+    </button>
+
+    <div class="hub">
+      <span class="dot"></span>
+      <span class="you">你在这里</span>
+    </div>
+
+    <button class="arm e" data-k="east">
+      <span class="dir">东 · EAST</span>
+      <span class="nm">方舟计划</span>
+      <span class="hint">想走的人，最后没走成</span>
+    </button>
+
+    <button class="arm s" data-k="south">
+      <span class="dir">南 · SOUTH</span>
+      <span class="nm">风暴纪元</span>
+      <span class="hint">末日之后还有日子</span>
+    </button>
+  </div>
+
+  <div class="panel" id="panel">
+    <div class="empty">选一个方向。</div>
+  </div>
+
+  <footer>
+    防风 Zephyr · 形象来自「防风Zephyr」企划组 · 允许非商用二次分发<br>
+    这里写的都是<b>已定稿</b>的部分。还标着待定的，一个字都没往上编。
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var DATA = {
+    east: {
+      tag: "东 · 方舟计划",
+      h: "想走的人，最后没走成",
+      ps: [
+        "前文明造了船。装了人，选了坐标，算好了什么时候点火最省燃料。",
+        "发射那天出了事——载具在半空里散开，谁也没走成。剩下的时间只够把坐标和图纸塞进石头里，然后等。",
+        "他们把这个计划叫「方舟」。不是船的名字，是一个许诺：总会有一条船真的走成。"
+      ],
+      q: "「他们不叫自己幸存者。他们叫自己没赶上的人。」",
+      end: "档案编号 · A-01 · 燃烧完成度 0%"
+    },
+    south: {
+      tag: "南 · 风暴纪元",
+      h: "末日之后还有日子",
+      ps: [
+        "晶石网络崩了以后，天变了颜色。空气里有静电，金属会自己响，晚上抬头是绿的。",
+        "后来的事没人写全。只有一句被反复抄下来：雨下了四十天，然后有人从底下爬出来，开始种东西。",
+        "现文明就是从那批人长出来的。他们没见过前文明，只在土里挖到过发光的东西。"
+      ],
+      q: "「你们叫它末日。我们叫它天气。」",
+      end: "档案编号 · S-02 · 已过去 300 年（估）"
+    },
+    west: {
+      tag: "西 · 洄与溯黎",
+      h: "来处，和天亮之前",
+      ps: [
+        "「溯黎」是前文明对自己的称呼。溯，逆流而上；黎，天亮。",
+        "「洄」是来处——水打着旋往回流的地方。两个词都不是地名，是方向。",
+        "一个文明给自己取的名字，往往说明它最想要什么。他们要的是天亮。"
+      ],
+      q: "「他们不叫自己祖先。他们叫自己天亮之前。」",
+      end: "档案编号 · W-03 · 语义存疑（⚠ 待定）"
+    },
+    north: {
+      tag: "北 · 蚀",
+      h: "太阳在看别的地方",
+      ps: [
+        "那颗恒星。吞掉了一半的光，剩下的照过来是冷的。",
+        "没人知道它为什么会这样。现有的解释都太像故事，故事又都太像安慰。",
+        "唯一能确定的是：它不是敌人。它只是不看这边了。"
+      ],
+      q: "「蚀不是结束。是太阳在看别的地方。」",
+      end: "档案编号 · N-04 · 观测数据不足"
+    }
+  };
+
+  var panel = document.getElementById("panel");
+  var arms = Array.prototype.slice.call(document.querySelectorAll(".arm"));
+  var cur = null;
+
+  function render(k){
+    var d = DATA[k];
+    if (!d) return;
+    panel.classList.remove("show");
+    setTimeout(function(){
+      panel.innerHTML =
+        '<div class="tag">' + d.tag + '</div>' +
+        '<h2>' + d.h + '</h2>' +
+        d.ps.map(function(p){ return '<p>' + p + '</p>'; }).join("") +
+        '<p class="q">' + d.q + '</p>' +
+        '<div class="end">' + d.end + '</div>';
+      panel.classList.add("show");
+    }, 140);
+  }
+
+  arms.forEach(function(a){
+    a.addEventListener("click", function(){
+      var k = a.getAttribute("data-k");
+      arms.forEach(function(x){ x.classList.remove("on"); });
+      a.classList.add("on");
+      if (k === cur) return;
+      cur = k;
+      render(k);
+      panel.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
+  });
+
+  // 默认展开东边，页面一进来不是空的
+  setTimeout(function(){
+    var first = document.querySelector('.arm[data-k="east"]');
+    if (first) first.click();
+  }, 260);
+})();
+</script>
+<script>try{localStorage.setItem('zephyr.visit.crossroad','1')}catch(e){}</script>
+<script>
+/* 每页都能弹两下：按 1–7 是七根空弦 */
+(function(){
+  var OPEN=[130.81,146.83,174.61,196.00,220.00,261.63,293.66];
+  var NAME=["C3","D3","F3","G3","A3","C4","D4"];
+  var CN=["一","二","三","四","五","六","七"];
+  var ac=null,box=null,tid=null;
+
+  function ac_(){ if(!ac){ var C=window.AudioContext||window.webkitAudioContext; if(!C) return null; ac=new C(); } return ac; }
+
+  function pluck(f){
+    var a=ac_(); if(!a) return;
+    if(a.state==="suspended") a.resume();
+    var sr=a.sampleRate, N=Math.max(2,Math.round(sr/f));
+    var dur=1.7, buf=a.createBuffer(1,Math.round(sr*dur),sr), d=buf.getChannelData(0);
+    var line=new Float32Array(N), i;
+    for(i=0;i<N;i++) line[i]=Math.random()*2-1;
+    var p=0;
+    for(i=0;i<d.length;i++){
+      var cur=line[p], nxt=line[(p+1)%N];
+      d[i]=cur;
+      line[p]=(cur+nxt)*0.5*0.9974;
+      p=(p+1)%N;
+    }
+    /* 末尾淡出，防爆音 */
+    var tail=Math.round(sr*0.06);
+    for(i=d.length-tail;i<d.length;i++) d[i]*=(d.length-i)/tail;
+
+    var src=a.createBufferSource(); src.buffer=buf;
+    var lp=a.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=2800;
+    var g=a.createGain(); g.gain.value=0.30;
+    src.connect(lp); lp.connect(g); g.connect(a.destination);
+    src.start();
+  }
+
+  function tip(t){
+    if(!box){
+      box=document.createElement("div");
+      box.style.cssText="position:fixed;right:18px;bottom:18px;z-index:99;"
+        +"font:11px ui-monospace,Consolas,monospace;letter-spacing:.12em;color:#8ff5ec;"
+        +"background:rgba(5,12,14,.88);border:1px solid rgba(0,201,194,.30);"
+        +"border-radius:2px;padding:6px 12px;opacity:0;transition:opacity .18s;pointer-events:none";
+      document.body.appendChild(box);
+    }
+    box.textContent=t;
+    box.style.opacity="1";
+    clearTimeout(tid);
+    tid=setTimeout(function(){ box.style.opacity="0"; }, 900);
+  }
+
+  document.addEventListener("keydown", function(e){
+    if(e.metaKey||e.ctrlKey||e.altKey) return;
+    var tag=(e.target&&e.target.tagName||"").toLowerCase();
+    if(tag==="input"||tag==="textarea"||tag==="select") return;
+    var n=parseInt(e.key,10);
+    if(n>=1&&n<=7){
+      e.preventDefault();
+      pluck(OPEN[n-1]);
+      tip("♪ "+CN[n-1]+"弦 "+NAME[n-1]);
+    }
+  });
+})();
+</script>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('../sw.js').catch(function(){})})}</script>
+</body>
+</html>

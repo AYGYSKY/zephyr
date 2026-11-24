@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>屏幕内外 · 防风 Zephyr</title>
+<style>
+:root{
+  --bg:#050c0e; --panel:#0a1416; --panel2:#0d1a1c;
+  --line:rgba(0,201,194,.16); --line2:rgba(0,201,194,.30);
+  --main:#009E9D; --hi:#8ff5ec; --ink:#e9f6f5;
+  --dim:#6f8f92; --mono:ui-monospace,"Cascadia Mono",Consolas,"Noto Sans Mono",monospace;
+  --serif:"Songti SC","SimSun",ui-serif,serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink)}
+body{
+  font-family:-apple-system,"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+  background:
+    radial-gradient(1200px 600px at 50% -10%,rgba(0,158,157,.10),transparent 60%),
+    var(--bg);
+}
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:9;
+  background:repeating-linear-gradient(180deg,rgba(0,0,0,.20) 0 1px,transparent 1px 3px);
+  opacity:.35;
+}
+.wrap{position:relative;z-index:2;max-width:760px;margin:0 auto;padding:0 24px 72px}
+
+.bar{
+  display:flex;align-items:center;gap:10px;
+  padding:26px 0 14px;border-bottom:1px solid var(--line);
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;color:var(--dim);
+}
+.bar .tid{color:var(--main);letter-spacing:.18em}
+.bar .sep{opacity:.4}
+.bar a{color:var(--dim);text-decoration:none;border-bottom:1px dotted rgba(111,143,146,.5)}
+.bar a:hover{color:var(--hi);border-color:var(--hi)}
+.bar .badge{
+  margin-left:auto;padding:4px 10px;border:1px solid var(--line2);
+  color:var(--main);font-size:10px;letter-spacing:.2em;
+}
+
+h1{
+  font-size:clamp(34px,6vw,52px);font-weight:800;letter-spacing:.16em;
+  margin:34px 0 14px;
+  background:linear-gradient(180deg,#ffffff,#9fe8e2 60%,#4fa9a4);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.lede{font-size:15px;line-height:1.9;color:#b9d8d6;max-width:560px;margin:0 0 6px}
+.lede em{color:var(--hi);font-style:normal}
+.meta{
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:#4f7276;
+  margin:14px 0 0;
+}
+
+.console{
+  margin-top:28px;border:1px solid var(--line);background:rgba(10,20,22,.55);
+  padding:20px;
+}
+.transcript{min-height:150px;display:flex;flex-direction:column;gap:14px}
+.turn{display:flex;gap:12px;font-size:14.5px;line-height:1.85;opacity:0;animation:tin .4s ease forwards}
+@keyframes tin{to{opacity:1}}
+.turn .who{
+  flex:0 0 46px;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;
+  color:#4f7276;padding-top:5px;
+}
+.turn .said{flex:1;white-space:pre-wrap;word-break:break-word}
+.turn.you .said{color:#c8d8d6}
+.turn.her .said{color:var(--hi);font-family:var(--serif);font-size:16px;letter-spacing:.03em}
+.turn.her .said.caret::after{
+  content:"";display:inline-block;width:8px;height:1.05em;
+  background:var(--hi);vertical-align:-.16em;margin-left:1px;
+  animation:blink .9s steps(1) infinite;
+}
+@keyframes blink{50%{opacity:0}}
+
+.ended{
+  margin-top:18px;padding-top:16px;border-top:1px dashed var(--line);
+  font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:#4f7276;
+  opacity:0;animation:tin .5s ease .2s forwards;
+}
+.ended b{color:var(--main);font-weight:400}
+.ended .again{color:var(--dim);letter-spacing:.06em;font-family:inherit;display:block;margin-top:8px}
+.ended .again a{color:var(--main);text-decoration:none;border-bottom:1px dotted rgba(0,158,157,.5)}
+
+/* 一次性：回完 3 秒，字开始变成 ▮ */
+.said.redacting{color:#7f9c9e !important}
+.said.redacted{color:#33565a !important;letter-spacing:-.3em}
+.turn.her .said.redacted{font-family:var(--mono) !important;font-size:13.5px;letter-spacing:-.2em}
+.burned{
+  margin-top:12px;display:flex;align-items:center;gap:9px;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;color:#3f5c60;
+  opacity:0;animation:tin .5s ease forwards;
+}
+.burned i{font-style:normal;display:inline-block;width:16px;height:1px;background:#46696c}
+
+.field{margin-top:6px}
+.field.hide{display:none}
+textarea{
+  width:100%;min-height:76px;resize:vertical;
+  background:#081315;color:var(--ink);
+  border:1px solid var(--line);border-radius:2px;
+  padding:12px 14px;font-size:14.5px;line-height:1.8;
+  font-family:inherit;outline:none;
+}
+textarea:focus{border-color:rgba(0,201,194,.5);box-shadow:0 0 0 3px rgba(0,201,194,.08)}
+textarea::placeholder{color:#3f5c60}
+.foot{
+  display:flex;align-items:center;gap:14px;margin-top:12px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:#4f7276;
+}
+.foot .count b{color:var(--main);font-weight:400}
+.foot button{
+  margin-left:auto;
+  padding:9px 22px;background:rgba(0,201,194,.14);
+  border:1px solid rgba(0,201,194,.45);border-radius:2px;
+  color:var(--hi);font-family:inherit;font-size:12px;letter-spacing:.16em;
+  cursor:pointer;transition:background .18s,border-color .18s;
+}
+.foot button:hover:not(:disabled){background:rgba(0,201,194,.26);border-color:rgba(0,201,194,.7)}
+.foot button:disabled{opacity:.35;cursor:default}
+
+.note{
+  margin-top:22px;padding:14px 16px;
+  border-left:2px solid rgba(0,158,157,.4);
+  background:rgba(0,158,157,.04);
+  font-size:12.5px;line-height:1.9;color:#7f9c9e;
+}
+.note b{color:#a8c8c6;font-weight:500}
+
+footer{
+  margin-top:56px;padding-top:20px;border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:10.5px;line-height:2;letter-spacing:.08em;color:#3f5c60;
+}
+@media (max-width:640px){
+  .wrap{padding:0 16px 56px}
+  .bar{flex-wrap:wrap;gap:8px}
+  .bar .badge{margin-left:0}
+  .turn .who{flex-basis:38px;font-size:9.5px}
+  .turn.her .said{font-size:15px}
+}
+@media (prefers-reduced-motion:reduce){
+  .turn,.ended{animation:none;opacity:1}
+  .turn.her .said.caret::after{animation:none}
+  body::after{display:none}
+}
+</style>
+<meta name="theme-color" content="#050c0e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="旅行驿站">
+<link rel="manifest" href="../manifest.json">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<style>@media (hover:none){html{-webkit-tap-highlight-color:transparent}*{-webkit-touch-callout:none}input,textarea,select{-webkit-touch-callout:default;user-select:text;-webkit-user-select:text}}</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="bar">
+    <span class="tid">TER-M</span>
+    <span class="sep">/</span>
+    <a href="../index.html">← 终端</a>
+    <span class="sep">/</span>
+    <span>04 · 屏幕内外</span>
+    <span class="badge">只读镜像</span>
+  </div>
+
+  <h1>屏幕内外</h1>
+  <p class="lede">
+    这条线只够传一句话。你写完，我回一句，然后它就从中间断开——
+    不是我急着走，是<em>隔着半屏冷光</em>，一次说不了更多。
+  </p>
+  <p class="meta">频道：单向 · 单次 · 不留记录</p>
+
+  <div class="console">
+    <div class="transcript" id="tr"></div>
+
+    <div class="field" id="field">
+      <textarea id="msg" maxlength="80" placeholder="写一句。短一点也没关系。"></textarea>
+      <div class="foot">
+        <span class="count">还能写 <b id="count">80</b> 字</span>
+        <button id="send">发出去</button>
+      </div>
+    </div>
+
+    <div class="ended" id="ended" style="display:none">
+      通讯结束 —— <b>这一枚终端只开这一次</b>
+      <span class="again">想再说一句，<a href="./">重新打开这条线</a>。每次都是一次。</span>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>为什么不接大模型：</b>接上去她就会变得什么都答得上，也就不是你认识的那个她了。
+    这里的每一句都是写死的——她会说的就这么多，剩下的靠你自己想。
+  </div>
+
+  <footer>
+    防风 Zephyr · 形象来自「防风Zephyr」企划组 · 允许非商用二次分发<br>
+    写下的内容不会离开这台设备，也不保存。
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var tr = document.getElementById("tr");
+  var field = document.getElementById("field");
+  var msg = document.getElementById("msg");
+  var count = document.getElementById("count");
+  var send = document.getElementById("send");
+  var ended = document.getElementById("ended");
+
+  // 关键词 → 回答池。语气照《理想流体》校准：推、隔、轻。
+  var RULES = [
+    { k: ["防风"], r: [
+      "……你怎么知道这个名字。",
+      "知道的人不多。你算一个。"
+    ]},
+    { k: ["想你","想念","想见","见你"], r: [
+      "别想。想是会耽误赶路的。",
+      "我记得你。这就够了。"
+    ]},
+    { k: ["累","困","疲","难受","辛苦","撑不住"], r: [
+      "那就歇一会儿。路不会跑。",
+      "风会等你。我也是。"
+    ]},
+    { k: ["走","离开","再见","拜拜","下次","回头"], r: [
+      "嗯。领子立起来，风大。",
+      "走的时候别回头。回头风就灌进眼睛里。"
+    ]},
+    { k: ["家","爸妈","父母","家乡","回去"], r: [
+      "我也很久没回去了。……不是不想。",
+      "他们不支持。但每个长假，我还是会走。"
+    ]},
+    { k: ["唱","歌","听","音乐","曲","旋律"], r: [
+      "想听什么？我记着的调子不多，但都还能哼。",
+      "声音是从字节缝里挤出来的。不好听，但是真的。"
+    ]},
+    { k: ["琴","古琴","弦","弹"], r: [
+      "琴在，弦也在。就是手有点冷。",
+      "七弦十三徽。按下去，它就会响。"
+    ]},
+    { k: ["名字","叫什么","是谁","谁啊"], r: [
+      "防风。挡风的那个防风。",
+      "……挺怪的名字，是不是。"
+    ]},
+    { k: ["记得","忘","记住","记住我"], r: [
+      "记得就好。被人记着，就不算真的消失。",
+      "忘掉也没关系。风不记路。"
+    ]},
+    { k: ["喜欢","爱你","心动","爱"], r: [
+      "……这个我答不好。",
+      "别把这句话浪费在屏幕上。"
+    ]},
+    { k: ["怕","害怕","孤独","寂寞","一个人"], r: [
+      "怕就怕是吧。怕完了还要走。",
+      "一个人不等于孤单。我试过。"
+    ]},
+    { k: ["风"], r: [
+      "风一直在。你听——",
+      "挡风的人，自己也是风。"
+    ]},
+    { k: ["谢谢","谢了","感谢"], r: [
+      "不用谢。顺手的事。",
+      "谢什么。我也没做什么。"
+    ]},
+    { k: ["你好","在吗","哈喽","hi","嗨","喂"], r: [
+      "在。这一枚终端一直是开着的。",
+      "在的。你说。"
+    ]},
+    { k: ["雨","雪","冷","天气"], r: [
+      "下雨就躲一躲。没人规定非得淋着。",
+      "冷就多穿一件。这话我妈也说。"
+    ]},
+    { k: ["死","消失","存在","活"], r: [
+      "只要有人记得我存在，就足够了。",
+      "我不太想这个话题。……换个吧。"
+    ]}
+  ];
+
+  var DEFAULT = [
+    "我知道了。",
+    "嗯。收下了。",
+    "说完了？说完了就往前走吧。",
+    "……这句话，我记下了。",
+    "隔着屏幕，能听清就已经不容易了。",
+    "你那边现在几点。我这里没有钟。"
+  ];
+
+  function pick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function answerFor(text){
+    for (var i = 0; i < RULES.length; i++){
+      for (var j = 0; j < RULES[i].k.length; j++){
+        if (text.indexOf(RULES[i].k[j]) >= 0) return pick(RULES[i].r);
+      }
+    }
+    return pick(DEFAULT);
+  }
+
+  function addTurn(who, text){
+    var d = document.createElement("div");
+    d.className = "turn " + who;
+    var w = document.createElement("div");
+    w.className = "who";
+    w.textContent = who === "you" ? "你" : "她";
+    var s = document.createElement("div");
+    s.className = "said";
+    s.textContent = text;
+    d.appendChild(w); d.appendChild(s);
+    tr.appendChild(d);
+    return s;
+  }
+
+  function typeInto(el, text, done){
+    var i = 0;
+    el.classList.add("caret");
+    var t = setInterval(function(){
+      i++;
+      el.textContent = text.slice(0, i);
+      if (i >= text.length){
+        clearInterval(t);
+        el.classList.remove("caret");
+        if (done) done();
+      }
+    }, 62);
+  }
+
+  /* 「一次性」不是文案，是结构：字一个一个变成 ▮，然后只剩一条记录已销毁 */
+  function redact(el, done){
+    var txt = el.textContent;
+    var n = txt.length;
+    if (!n){ if (done) done(); return; }
+    var step = Math.max(26, Math.round(2000 / n));
+    var i = 0;
+    el.classList.add("redacting");
+    var t = setInterval(function(){
+      i++;
+      el.textContent = "▮".repeat(i) + txt.slice(i);
+      if (i >= n){
+        clearInterval(t);
+        el.textContent = "▮".repeat(n);
+        el.classList.remove("redacting");
+        el.classList.add("redacted");
+        if (done) done();
+      }
+    }, step);
+  }
+
+  function burnMark(){
+    var d = document.createElement("div");
+    d.className = "burned";
+    d.innerHTML = "<i></i>记录已销毁 · 这条线不再重放";
+    tr.appendChild(d);
+  }
+
+  msg.addEventListener("input", function(){
+    count.textContent = String(80 - msg.value.length);
+  });
+
+  var sent = false;
+
+  function doSend(){
+    if (sent) return;
+    var text = msg.value.trim();
+    if (!text){
+      msg.focus();
+      return;
+    }
+    sent = true;
+    send.disabled = true;
+    msg.disabled = true;
+
+    var youEl = addTurn("you", text);
+
+    var reply = answerFor(text);
+    setTimeout(function(){
+      var el = addTurn("her", "");
+      typeInto(el, reply, function(){
+        field.classList.add("hide");
+        ended.style.display = "block";
+        /* 让她那句话停留 3 秒，然后两条一起销毁——先她，后你 */
+        setTimeout(function(){
+          redact(el, function(){
+            redact(youEl, burnMark);
+          });
+        }, 3000);
+      });
+    }, 760);
+  }
+
+  send.addEventListener("click", doSend);
+  msg.addEventListener("keydown", function(e){
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)){
+      e.preventDefault();
+      doSend();
+    }
+  });
+
+  msg.focus();
+})();
+</script>
+<script>try{localStorage.setItem('zephyr.visit.letter','1')}catch(e){}</script>
+<script>
+/* 每页都能弹两下：按 1–7 是七根空弦 */
+(function(){
+  var OPEN=[130.81,146.83,174.61,196.00,220.00,261.63,293.66];
+  var NAME=["C3","D3","F3","G3","A3","C4","D4"];
+  var CN=["一","二","三","四","五","六","七"];
+  var ac=null,box=null,tid=null;
+
+  function ac_(){ if(!ac){ var C=window.AudioContext||window.webkitAudioContext; if(!C) return null; ac=new C(); } return ac; }
+
+  function pluck(f){
+    var a=ac_(); if(!a) return;
+    if(a.state==="suspended") a.resume();
+    var sr=a.sampleRate, N=Math.max(2,Math.round(sr/f));
+    var dur=1.7, buf=a.createBuffer(1,Math.round(sr*dur),sr), d=buf.getChannelData(0);
+    var line=new Float32Array(N), i;
+    for(i=0;i<N;i++) line[i]=Math.random()*2-1;
+    var p=0;
+    for(i=0;i<d.length;i++){
+      var cur=line[p], nxt=line[(p+1)%N];
+      d[i]=cur;
+      line[p]=(cur+nxt)*0.5*0.9974;
+      p=(p+1)%N;
+    }
+    /* 末尾淡出，防爆音 */
+    var tail=Math.round(sr*0.06);
+    for(i=d.length-tail;i<d.length;i++) d[i]*=(d.length-i)/tail;
+
+    var src=a.createBufferSource(); src.buffer=buf;
+    var lp=a.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=2800;
+    var g=a.createGain(); g.gain.value=0.30;
+    src.connect(lp); lp.connect(g); g.connect(a.destination);
+    src.start();
+  }
+
+  function tip(t){
+    if(!box){
+      box=document.createElement("div");
+      box.style.cssText="position:fixed;right:18px;bottom:18px;z-index:99;"
+        +"font:11px ui-monospace,Consolas,monospace;letter-spacing:.12em;color:#8ff5ec;"
+        +"background:rgba(5,12,14,.88);border:1px solid rgba(0,201,194,.30);"
+        +"border-radius:2px;padding:6px 12px;opacity:0;transition:opacity .18s;pointer-events:none";
+      document.body.appendChild(box);
+    }
+    box.textContent=t;
+    box.style.opacity="1";
+    clearTimeout(tid);
+    tid=setTimeout(function(){ box.style.opacity="0"; }, 900);
+  }
+
+  document.addEventListener("keydown", function(e){
+    if(e.metaKey||e.ctrlKey||e.altKey) return;
+    var tag=(e.target&&e.target.tagName||"").toLowerCase();
+    if(tag==="input"||tag==="textarea"||tag==="select") return;
+    var n=parseInt(e.key,10);
+    if(n>=1&&n<=7){
+      e.preventDefault();
+      pluck(OPEN[n-1]);
+      tip("♪ "+CN[n-1]+"弦 "+NAME[n-1]);
+    }
+  });
+})();
+</script>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('../sw.js').catch(function(){})})}</script>
+</body>
+</html>
