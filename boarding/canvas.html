@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>登机牌 · Canvas 版 · 防风 Zephyr</title>
+<style>
+  :root{
+    --paper:#f4f1e8; --paper2:#efeade; --ink:#0c2b2c; --ink2:#1d4446;
+    --mute:#6b8486; --jade:#009E9D; --jade-d:#007a79; --mist:#7fd8c9;
+    --dim:#6f8f92; --line:rgba(12,43,44,.14); --bg:#06171a;
+    --sans:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",-apple-system,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,"SF Mono",Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg)}
+  body{
+    font-family:var(--sans); -webkit-font-smoothing:antialiased;
+    color:#cfe9e6; min-height:100vh; padding:26px 18px 60px;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:
+      radial-gradient(900px 520px at 22% -8%,rgba(0,158,157,.16),transparent 70%),
+      radial-gradient(760px 460px at 88% 108%,rgba(127,216,201,.10),transparent 72%);
+  }
+  .wrap{position:relative;z-index:1;max-width:1320px;margin:0 auto}
+  .crumb{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;color:var(--dim);margin-bottom:22px}
+  .crumb a{color:var(--dim);text-decoration:none;transition:color .2s}
+  .crumb a:hover{color:var(--mist)}
+  h1{
+    font-size:clamp(30px,5vw,44px);font-weight:800;letter-spacing:.04em;
+    color:#effcfa;margin:0 0 10px;line-height:1.15;
+  }
+  .lede{color:#9dbdbb;font-size:14.5px;line-height:1.85;max-width:760px;margin:0 0 8px}
+  .meta{font-family:var(--mono);font-size:11.5px;letter-spacing:.09em;color:#6d9391;margin-bottom:26px}
+  .stage{margin:0 0 22px}
+  canvas{display:block;width:100%;height:auto;border-radius:14px;
+    box-shadow:0 18px 46px rgba(0,0,0,.45)}
+  .controls{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
+  .fld{display:flex;flex-direction:column;gap:6px}
+  .fld label{font-size:11px;letter-spacing:.12em;color:var(--dim)}
+  .fld input,.fld select{
+    background:rgba(255,255,255,.04);border:1px solid rgba(0,158,157,.28);
+    color:#dff3f0;border-radius:8px;padding:9px 11px;font-size:14px;
+    font-family:inherit;min-width:150px;outline:none;
+  }
+  .fld input:focus,.fld select:focus{border-color:var(--jade)}
+  .fld select option{background:#0a1b1d;color:#e8fbf8}
+  .btns{display:flex;gap:10px;margin-left:auto}
+  button{
+    font-family:inherit;font-size:14px;padding:10px 18px;border-radius:8px;
+    border:1px solid rgba(0,158,157,.4);background:rgba(0,158,157,.12);
+    color:#bff0ec;cursor:pointer;transition:.15s;
+  }
+  button:hover{background:rgba(0,158,157,.24);border-color:var(--jade)}
+  button.primary{background:var(--jade);border-color:var(--jade);color:#04191a;font-weight:600}
+  button.primary:hover{background:#00b6b4}
+  .tips{margin-top:18px;font-size:12px;line-height:1.9;color:var(--dim)}
+  footer{margin-top:44px;padding-top:20px;
+    border-top:1px solid rgba(0,158,157,.16);font-size:11.5px;line-height:1.9;color:var(--dim)}
+  @media (max-width:720px){
+    .controls{gap:10px}
+    .fld input,.fld select{min-width:0;width:100%}
+    .fld{flex:1 1 140px}
+    .btns{margin-left:0;width:100%}
+    .btns button{flex:1}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<div class="crumb"><a href="../index.html">← 终端</a> / 11b · 登机牌（Canvas）</div>
+<h1>登机牌 · Canvas 版</h1>
+<p class="lede">和车票同一套做法：整张票是画在 canvas 上的，点「存成图片」就是直接把这块画布导出，不经过任何截图库，也不受浏览器渲染差异影响。</p>
+<p class="meta">CKG → C3Y · 直飞 · 记名 · 不托运</p>
+
+<div class="stage"><canvas id="cv" width="1990" height="820"></canvas></div>
+<div class="stage"><canvas id="cvBack" width="1990" height="820" style="display:none"></canvas></div>
+
+<div class="controls">
+  <div class="fld"><label>乘客 PASSENGER</label><input id="iName" value="防风" maxlength="12"></div>
+  <div class="fld"><label>日期 DATE</label><input id="iDate" type="date"></div>
+  <div class="fld"><label>登机口 GATE</label><input id="iGate" value="T3-E08" maxlength="8"></div>
+  <div class="fld"><label>座位 SEAT</label><select id="iSeat"></select></div>
+  <div class="fld"><label>舱位 CLASS</label><select id="iClass"></select></div>
+  <div class="fld"><label>航班号 FLIGHT</label><input id="iFlight" value="TP-2026" maxlength="10"></div>
+  <div class="btns">
+    <button class="primary" id="btnSave">存成图片</button>
+    <button id="btnFlip">翻到背面</button>
+  </div>
+</div>
+
+<p class="tips">
+  正面存成 <code>登机牌-票号.png</code>，背面存成 <code>登机牌背面-票号.png</code>。<br>
+  票号由日期与座位生成，同一天同一座位永远同一张。
+</p>
+
+<footer>
+  防风 Zephyr · 形象来自「防风Zephyr」企划组 · 允许非商用二次分发<br>
+  只读镜像 · 不联网 · 不上报
+</footer>
+
+<script src="qrlib.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var cv  = document.getElementById("cv");
+  var cvB = document.getElementById("cvBack");
+  var ctx  = cv.getContext("2d");
+  var ctxB = cvB.getContext("2d");
+
+  var W = 1990, H = 820;
+  var STUB_X = 1618;          // 撕线
+  var PAD = 56;
+
+  var C = {
+    paper:"#f6f4ec", ink:"#0c2b2c", jade:"#009e9d", jadeD:"#007a79",
+    dim:"#6f8f92", faint:"rgba(12,43,44,.10)", line:"rgba(12,43,44,.14)",
+    white:"#ffffff"
+  };
+
+  var FONT = '"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+  var MONO = 'ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+
+  function f(size, weight, family){
+    return (weight || 400) + " " + size + "px " + (family || FONT);
+  }
+
+  // ── 座位 / 舱位选项 ─────────────────────────────
+  var SEATS = [
+    ["C4", "C4 · 中"],
+    ["c3", "c3 · 低"],
+    ["C5", "C5 · 高"],
+    ["C6", "C6 · 极限"],
+    ["01A", "01A · 靠窗"],
+    ["01F", "01F · 另一侧靠窗"],
+    ["12C", "12C · 过道"],
+    ["07D", "07D · 中间"],
+    ["88H", "88H · 尾舱"],
+    ["W1", "W1 · 机翼上"],
+    ["T9", "T9 · 尾流区"],
+    ["C7", "C7 · 超出音域"]
+  ];
+  var CLASSES = [
+    ["VIP-S", "驿站特等 · VIP-S"],
+    ["VIP-A", "驿站常客 · VIP-A"],
+    ["STD", "随行 · STD"]
+  ];
+
+  var S = {
+    name:"防风",
+    date:new Date().toISOString().slice(0,10),
+    gate:"T3-E08",
+    seat:"C4",
+    cls:"VIP-S",
+    flight:"TP-2026"
+  };
+  var showingBack = false;
+
+  // 背面用的手写 logo（同目录 png，透明底）
+  var logoImg = new Image();
+  var logoReady = false;
+  logoImg.onload = function(){
+    logoReady = true;
+    if (showingBack) drawBack();
+  };
+  logoImg.src = "logo_transparent.png";
+
+  // ── 小工具 ─────────────────────────────────────
+  function pad2(n){ return n < 10 ? "0" + n : "" + n; }
+
+  function dateDots(iso){
+    if (!iso) return "————. ——. ——";
+    var p = iso.split("-");
+    if (p.length !== 3) return iso;
+    return p[0] + "." + p[1] + "." + p[2];
+  }
+
+  function dateShort(iso){
+    if (!iso) return "—";
+    var p = iso.split("-");
+    if (p.length !== 3) return iso;
+    var M = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+    var m = M[parseInt(p[1],10)-1] || "—";
+    return parseInt(p[2],10) + " " + m;
+  }
+
+  function hash(str){
+    var h = 2166136261;
+    for (var i=0;i<str.length;i++){
+      h ^= str.charCodeAt(i);
+      h = (h * 16777619) >>> 0;
+    }
+    return h >>> 0;
+  }
+
+  function tid(){
+    var h = hash(S.date + "|" + S.seat);
+    var a = (h % 9000) + 1000;
+    var b = S.date.replace(/-/g, "").slice(2);
+    return "TP-" + a + "-" + b.slice(0,4) + "-" + b.slice(4);
+  }
+
+  function clsLabel(){
+    for (var i=0;i<CLASSES.length;i++){ if (CLASSES[i][0]===S.cls) return CLASSES[i][1]; }
+    return S.cls;
+  }
+  function clsCode(){
+    for (var i=0;i<CLASSES.length;i++){ if (CLASSES[i][0]===S.cls) return CLASSES[i][1].split("·")[1].trim(); }
+    return S.cls;
+  }
+  function seatLabel(){
+    for (var i=0;i<SEATS.length;i++){ if (SEATS[i][0]===S.seat) return SEATS[i][1]; }
+    return S.seat;
+  }
+
+  // ── 底纹：极淡纸格 ──────────────────────────────
+  function paperBase(g, w, h){
+    g.fillStyle = C.paper;
+    g.fillRect(0,0,w,h);
+
+    g.save();
+    g.strokeStyle = "rgba(12,43,44,.045)";
+    g.lineWidth = 1;
+    var step = 24;
+    for (var x=0;x<w;x+=step){
+      g.beginPath(); g.moveTo(x+.5,0); g.lineTo(x+.5,h); g.stroke();
+    }
+    for (var y=0;y<h;y+=step){
+      g.beginPath(); g.moveTo(0,y+.5); g.lineTo(w,y+.5); g.stroke();
+    }
+    g.restore();
+
+    // 大圆水印
+    g.save();
+    g.globalAlpha = .5;
+    g.strokeStyle = "rgba(0,158,157,.10)";
+    g.lineWidth = 46;
+    g.beginPath();
+    g.arc(w - 190, 150, 300, 0, Math.PI*2);
+    g.stroke();
+    g.restore();
+  }
+
+  // ── 顶部彩条 ───────────────────────────────────
+  function topFoil(g, w){
+    var grd = g.createLinearGradient(0,0,w,0);
+    grd.addColorStop(0,   "#8fe3dd");
+    grd.addColorStop(.35, "#00b6b4");
+    grd.addColorStop(.7,  "#009e9d");
+    grd.addColorStop(1,   "#7fd8c9");
+    g.fillStyle = grd;
+    g.fillRect(0,0,w,10);
+  }
+
+  // ── 打孔缺口 + 撕线 ────────────────────────────
+  function tearLine(g, x, h){
+    g.save();
+    // 挖两个半圆：用 paper 外的颜色填，再叠一圈阴影
+    g.fillStyle = "#0b1c1f";
+    g.beginPath(); g.arc(x, 0, 17, 0, Math.PI); g.fill();
+    g.beginPath(); g.arc(x, h, 17, Math.PI, 0); g.fill();
+
+    // 虚线
+    g.strokeStyle = "rgba(12,43,44,.30)";
+    g.lineWidth = 2;
+    g.setLineDash([3,9]);
+    g.beginPath();
+    g.moveTo(x, 30);
+    g.lineTo(x, h-30);
+    g.stroke();
+    g.setLineDash([]);
+
+    // 沿线小字
+    g.fillStyle = "rgba(12,43,44,.28)";
+    g.font = f(10, 500);
+    g.textAlign = "center";
+    var txt = "沿此线撕开";
+    var step = 22;
+    var startY = 88;
+    for (var i=0;i<txt.length;i++){
+      g.fillText(txt[i], x, startY + i*step);
+    }
+    g.restore();
+  }
+
+  // ── 二维码 ─────────────────────────────────────
+  function drawQR(g, text, x, y, size){
+    var m;
+    try { m = QR.matrix(text, "M"); } catch(e){ return; }
+    var gg = m.grid, n = m.size;
+    if (!gg || !n) return;
+    var cell = size / n;
+    g.save();
+    g.fillStyle = C.white;
+    g.fillRect(x-6, y-6, size+12, size+12);
+    g.fillStyle = C.ink;
+    for (var r=0;r<n;r++){
+      for (var c=0;c<n;c++){
+        if (gg[r][c]) g.fillRect(x + c*cell, y + r*cell, cell+.6, cell+.6);
+      }
+    }
+    g.restore();
+  }
+
+  // ── Code128 B 条码（画矩形，不生成 svg）────────
+  var C128 = (function(){
+    // 每个字符 11 位模式（值为 0..105）
+    var PAT = [
+      "11011001100","11001101100","11001100110","10010011000","10010001100",
+      "10001001100","10011001000","10011000100","10001100100","11001001000",
+      "11001000100","11000100100","10110011100","10011011100","10011001110",
+      "10111001100","10011101100","10011100110","11001110010","11001011100",
+      "11001001110","11011100100","11001110100","11101101110","11101001100",
+      "11100101100","11100100110","11101100100","11100110100","11100110010",
+      "11011011000","11011000110","11000110110","10100011000","10001011000",
+      "10001000110","10110001000","10001101000","10001100010","11010001000",
+      "11000101000","11000100010","10110111000","10110001110","10001101110",
+      "10111011000","10111000110","10001110110","11101110110","11010001110",
+      "11000101110","11011101000","11011100010","11011101110","11101011000",
+      "11101000110","11100010110","11101101000","11101100010","11100011010",
+      "11101111010","11001000010","11110001010","10100110000","10100001100",
+      "10010110000","10010000110","10000101100","10000100110","10110010000",
+      "10110000100","10011010000","10011000010","10000110100","10000110010",
+      "11000010010","11001010000","11110111010","11000010100","10001111010",
+      "10100111100","10010111100","10010011110","10111100100","10011110100",
+      "10011110010","11110100100","11110010100","11110010010","11011011110",
+      "11011110110","11110110110","10101111000","10100011110","10001011110",
+      "10111101000","10111100010","11110101000","11110100010","10111011110",
+      "10111101110","11101011110","11110101110","11010000100","11010010000",
+      "11010011100","1100011101011"
+    ];
+
+    function encode(text){
+      var vals = [104]; // START B
+      var sum = 104;
+      for (var i=0;i<text.length;i++){
+        var c = text.charCodeAt(i);
+        var v = (c >= 32 && c <= 126) ? c - 32 : 0;
+        vals.push(v);
+        sum += v * (i+1);
+      }
+      vals.push(sum % 103);
+      vals.push(106); // STOP
+      var bits = "";
+      for (var j=0;j<vals.length;j++){
+        bits += PAT[vals[j]] || "";
+      }
+      return bits;
+    }
+
+    return { encode: encode };
+  })();
+
+  function drawBarcode(g, text, x, y, w, h){
+    var bits = C128.encode(text);
+    var n = bits.length;
+    var barW = w / n;
+    g.save();
+    g.fillStyle = C.ink;
+    for (var i=0;i<n;i++){
+      if (bits[i] === "1"){
+        g.fillRect(x + i*barW, y, Math.max(barW, 1.6), h);
+      }
+    }
+    g.restore();
+  }
+
+  // ── 圆角方块 logo ───────────────────────────────
+  function logoBox(g, x, y, s){
+    g.save();
+    var r = 14;
+    g.fillStyle = C.jade;
+    g.beginPath();
+    g.moveTo(x+r, y);
+    g.arcTo(x+s, y, x+s, y+s, r);
+    g.arcTo(x+s, y+s, x, y+s, r);
+    g.arcTo(x, y+s, x, y, r);
+    g.arcTo(x, y, x+s, y, r);
+    g.closePath();
+    g.fill();
+
+    // 里面画一个小飞机剪影
+    g.fillStyle = "#ffffff";
+    g.translate(x + s/2, y + s/2);
+    g.beginPath();
+    g.moveTo(0, -14);
+    g.lineTo(4, -2);
+    g.lineTo(14, 4);
+    g.lineTo(14, 8);
+    g.lineTo(3, 5);
+    g.lineTo(2, 12);
+    g.lineTo(6, 15);
+    g.lineTo(6, 17);
+    g.lineTo(0, 15);
+    g.lineTo(-6, 17);
+    g.lineTo(-6, 15);
+    g.lineTo(-2, 12);
+    g.lineTo(-3, 5);
+    g.lineTo(-14, 8);
+    g.lineTo(-14, 4);
+    g.lineTo(-4, -2);
+    g.closePath();
+    g.fill();
+    g.restore();
+  }
+
+  // ── 一个字段块 ─────────────────────────────────
+  function field(g, x, y, label, value, opts){
+    opts = opts || {};
+    g.save();
+    g.textAlign = "left";
+    g.fillStyle = C.dim;
+    g.font = f(11, 500);
+    g.fillText(label, x, y);
+    g.fillStyle = opts.jade ? C.jade : C.ink;
+    g.font = f(opts.size || 26, 600, opts.mono ? MONO : FONT);
+    g.fillText(value, x, y + (opts.gap || 34));
+    g.restore();
+  }
+
+  // ── 正面 ───────────────────────────────────────
+  function draw(){
+    var g = ctx;
+    g.clearRect(0,0,W,H);
+    paperBase(g, W, H);
+    topFoil(g, W);
+
+    // 存根底色略暖
+    g.save();
+    g.fillStyle = "rgba(12,43,44,.018)";
+    g.fillRect(STUB_X, 0, W - STUB_X, H);
+    g.restore();
+
+    // ── 主联 ──
+    logoBox(g, PAD, PAD, 52);
+    g.save();
+    g.textAlign = "left";
+    g.fillStyle = C.ink;
+    g.font = f(27, 700);
+    g.fillText("旅行驿站航空", PAD + 70, PAD + 24);
+    g.fillStyle = C.dim;
+    g.font = f(12, 500);
+    g.fillText("TRAVEL POST AIRWAYS · C3Y", PAD + 70, PAD + 46);
+    g.restore();
+
+    // CKG
+    g.save();
+    g.textAlign = "left";
+    g.fillStyle = C.ink;
+    g.font = f(112, 800);
+    g.fillText("CKG", PAD, 226);
+
+    // T3 角标
+    var ckgW = g.measureText("CKG").width;
+    g.fillStyle = C.jade;
+    g.font = f(20, 700);
+    g.fillText("T3", PAD + ckgW + 12, 176);
+
+    g.fillStyle = C.ink;
+    g.font = f(27, 600);
+    g.fillText("川泽", PAD, 278);
+    g.fillStyle = C.dim;
+    g.font = f(11, 500);
+    g.fillText("CHONGQING JIANGBEI", PAD, 300);
+    g.restore();
+
+    // 虚线 + 飞机
+    g.save();
+    g.strokeStyle = "rgba(0,158,157,.5)";
+    g.lineWidth = 2;
+    g.setLineDash([5,7]);
+    g.beginPath(); g.moveTo(470, 254); g.lineTo(1120, 254); g.stroke();
+    g.setLineDash([]);
+
+    // 两端圆点
+    g.fillStyle = C.jade;
+    g.beginPath(); g.arc(470, 254, 5, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.arc(1120, 254, 5, 0, Math.PI*2); g.fill();
+
+    // 飞机
+    g.translate(795, 254);
+    g.beginPath();
+    g.moveTo(0,-11); g.lineTo(3.4,-1.6); g.lineTo(11,3.2); g.lineTo(11,6.4);
+    g.lineTo(2.4,4); g.lineTo(1.6,9.6); g.lineTo(4.8,12); g.lineTo(4.8,13.6);
+    g.lineTo(0,12); g.lineTo(-4.8,13.6); g.lineTo(-4.8,12); g.lineTo(-1.6,9.6);
+    g.lineTo(-2.4,4); g.lineTo(-11,6.4); g.lineTo(-11,3.2); g.lineTo(-3.4,-1.6);
+    g.closePath(); g.fill();
+    g.restore();
+
+    // 航线小字
+    g.save();
+    g.textAlign = "center";
+    g.fillStyle = C.dim;
+    g.font = f(11, 500);
+    g.fillText(S.flight + " · DIRECT", 795, 230);
+    g.restore();
+
+    // C3Y
+    g.save();
+    g.textAlign = "right";
+    g.fillStyle = C.ink;
+    g.font = f(112, 800);
+    g.fillText("C3Y", 1490, 226);
+
+    g.fillStyle = C.jade;
+    g.font = f(20, 700);
+    g.textAlign = "left";
+    g.fillText("HQ", 1500, 176);
+
+    g.textAlign = "right";
+    g.fillStyle = C.ink;
+    g.font = f(27, 600);
+    g.fillText("川泽驿站", 1490, 278);
+    g.fillStyle = C.dim;
+    g.font = f(11, 500);
+    g.fillText("CHUANZE · TRAVEL POST", 1490, 300);
+    g.restore();
+
+    // ── 六个字段 ──
+    var row1 = 372, row2 = 472;
+    field(g, PAD,      row1, "PASSENGER / 乘客", S.name, { size: 30 });
+    field(g, 640,      row1, "DATE / 日期", dateDots(S.date), { mono: false, size: 26 });
+    field(g, 1120,     row1, "CLASS / 舱位", clsLabel(), { jade: true, size: 22 });
+
+    field(g, PAD,      row2, "BOARDING / 登机", "09:30", { size: 26 });
+    field(g, 500,      row2, "DEPARTURE / 起飞", "10:15", { size: 26 });
+    field(g, 940,      row2, "GATE / 登机口", S.gate, { size: 26, mono: true });
+    field(g, 1300,     row2, "SEAT / 座位", seatLabel(), { jade: true, size: 26 });
+
+    // 字段分隔线
+    g.save();
+    g.strokeStyle = C.line;
+    g.lineWidth = 1;
+    g.beginPath(); g.moveTo(PAD, 322); g.lineTo(1560, 322); g.stroke();
+    g.beginPath(); g.moveTo(PAD, 424); g.lineTo(1560, 424); g.stroke();
+    g.restore();
+
+    // ── VIP 条 ──
+    g.save();
+    g.fillStyle = "rgba(0,158,157,.10)";
+    g.fillRect(PAD, 556, 1504, 44);
+    g.fillStyle = C.jade;
+    g.fillRect(PAD, 556, 5, 44);
+
+    g.fillStyle = C.ink;
+    g.font = f(15, 600);
+    g.fillText("☆  驿站免检通道  ", PAD + 22, 584);
+    g.fillStyle = C.dim;
+    g.font = f(12, 500);
+    g.fillText("STATION VIP PASS", PAD + 22 + g.measureText("☆  驿站免检通道  ").width + 6, 584);
+
+    // 右侧徽章
+    g.fillStyle = C.jade;
+    g.fillRect(1450, 566, 90, 24);
+    g.fillStyle = "#ffffff";
+    g.font = f(13, 700);
+    g.textAlign = "center";
+    g.fillText(clsCode(), 1495, 583);
+    g.restore();
+
+    // ── 条码 ──
+    var barcodeText = tid() + " · CKG-C3Y · " + S.seat;
+    drawBarcode(g, tid().replace(/[^0-9]/g, "").slice(0,12) || "1234567890", PAD, 626, 1000, 74);
+
+    g.save();
+    g.fillStyle = C.dim;
+    g.font = f(11, 500, MONO);
+    g.textAlign = "left";
+    g.fillText(barcodeText, PAD, 724);
+    g.font = f(10, 500, MONO);
+    g.fillText(tid() + "  /  CKG-C3Y  //  " + S.seat + "  //  STATION FIRST  /  SEQ 001", PAD, 748);
+    g.restore();
+
+    // ── 二维码（主联右下）──
+    drawQR(g, "CKG-C3Y / " + S.seat + " / " + S.date, 1350, 626, 130);
+    g.save();
+    g.fillStyle = C.dim;
+    g.font = f(10, 500);
+    g.textAlign = "center";
+    g.fillText("扫这里", 1415, 776);
+    g.restore();
+
+    // ── 存根 ──
+    var sx = STUB_X + 58;
+    g.save();
+    g.textAlign = "left";
+    g.fillStyle = C.dim;
+    g.font = f(11, 500);
+    g.fillText("登机牌存根", sx, 76);
+    g.textAlign = "right";
+    g.fillText("STUB", W - 32, 76);
+
+    g.textAlign = "left";
+    g.fillStyle = C.ink;
+    g.font = f(40, 800);
+    g.fillText("CKG", sx, 132);
+
+    g.textAlign = "right";
+    g.fillText("C3Y", W - 32, 132);
+    g.restore();
+
+    // 存根行
+    var rows = [
+      ["PASSENGER", S.name],
+      ["GATE", S.gate],
+      ["SEAT", S.seat],
+      ["BOARDING", "09:30"],
+      ["SEQ", "001"]
+    ];
+    g.save();
+    for (var i=0;i<rows.length;i++){
+      var yy = 180 + i*44;
+      g.strokeStyle = C.faint;
+      g.lineWidth = 1;
+      g.setLineDash([2,4]);
+      g.beginPath(); g.moveTo(sx, yy+14); g.lineTo(W-32, yy+14); g.stroke();
+      g.setLineDash([]);
+
+      g.fillStyle = C.dim;
+      g.font = f(10, 500);
+      g.textAlign = "left";
+      g.fillText(rows[i][0], sx, yy);
+
+      g.fillStyle = C.ink;
+      g.font = f(15, 600);
+      g.textAlign = "right";
+      g.fillText(rows[i][1], W - 32, yy);
+    }
+    g.restore();
+
+    // 存根二维码
+    drawQR(g, tid() + " / " + S.name, sx, 420, 86);
+
+    g.save();
+    g.fillStyle = C.dim;
+    g.font = f(8, 600, MONO);
+    g.textAlign = "left";
+    g.fillText("STATION FIRST", sx + 98, 434);
+    g.font = f(7.5, 500, MONO);
+    g.fillText("TP-8848", sx + 98, 452);
+    g.fillText("BG-" + S.date.slice(5).replace("-",""), sx + 98, 466);
+    g.fillText("AUTH-" + S.seat, sx + 98, 480);
+    g.restore();
+
+    // 存根说明
+    g.save();
+    g.fillStyle = C.dim;
+    g.font = f(9, 500);
+    g.textAlign = "left";
+    g.fillText("驿站特等 · 行李直挂", sx, 530);
+    g.fillText("抵达后凭存根免检领取 · 不另开票", sx, 546);
+
+    g.fillStyle = "rgba(12,43,44,.34)";
+    g.font = f(9, 500);
+    g.fillText("AUTHORIZED / 登记人签署", sx, 640);
+
+    // 签名
+    g.strokeStyle = "rgba(12,43,44,.30)";
+    g.lineWidth = 1;
+    g.beginPath(); g.moveTo(W-160, 660); g.lineTo(W-32, 660); g.stroke();
+    g.fillStyle = C.ink;
+    g.font = f(15, 600);
+    g.textAlign = "right";
+    g.fillText(S.name, W-32, 650);
+    g.restore();
+
+    // 撕线
+    tearLine(g, STUB_X, H);
+  }
+
+  // ── 背面 ───────────────────────────────────────
+  function drawBack(){
+    var g = ctxB;
+    g.clearRect(0,0,W,H);
+    paperBase(g, W, H);
+    topFoil(g, W);
+
+    var RX = 262;   // 须知块左边界（整块往中间挪）
+    var RW = 860;   // 须知块参考宽度
+
+    // 四条须知
+    var rules = [
+      "本登机牌仅限本人一次性使用，不可转让。",
+      "登机口于起飞前 20 分钟关闭，逾时不候。",
+      "随身行李限一件，超件请于值机柜台托运。",
+      "起飞后请系好安全带——外面风大，但窗外值得。"
+    ];
+
+    g.save();
+    g.textAlign = "left";
+    g.fillStyle = C.dim;
+    g.font = f(11, 500);
+    g.fillText("CONDITIONS OF CARRIAGE", RX, 100);
+
+    g.textAlign = "right";
+    g.fillStyle = C.ink;
+    g.font = f(15, 600);
+    g.fillText("乘机须知", W - PAD, 100);
+
+    var nums = ["一","二","三","四"];
+    for (var i=0;i<rules.length;i++){
+      var y = 210 + i * 96;
+
+      g.textAlign = "left";
+      g.fillStyle = C.jade;
+      g.font = f(17, 600);
+      g.fillText(nums[i], RX, y);
+
+      g.strokeStyle = "rgba(0,158,157,.28)";
+      g.lineWidth = 1;
+      g.beginPath(); g.moveTo(RX + 34, y - 7); g.lineTo(RX + 54, y - 7); g.stroke();
+
+      g.fillStyle = C.ink;
+      g.font = f(21, 500);
+      g.fillText(rules[i], RX + 72, y);
+
+      if (i < rules.length - 1){
+        g.strokeStyle = "rgba(12,43,44,.08)";
+        g.setLineDash([2,6]);
+        g.beginPath(); g.moveTo(RX, y + 48); g.lineTo(RX + RW, y + 48); g.stroke();
+        g.setLineDash([]);
+      }
+    }
+    g.restore();
+
+    // 右下角 slogan
+    g.save();
+    g.textAlign = "center";
+    g.fillStyle = "rgba(12,43,44,.32)";
+    g.font = f(16, 500);
+    var slogan = "挡风的人，自己也是风。";
+    for (var j=0;j<slogan.length;j++){
+      g.fillText(slogan[j], W - 92, 176 + j*25);
+    }
+
+    g.fillStyle = "rgba(12,43,44,.20)";
+    g.font = f(9, 500);
+    var tag = "ZEPHYR";
+    var tagY = 176 + slogan.length*25 + 14;
+    for (var k=0;k<tag.length;k++){
+      g.fillText(tag[k], W - 92, tagY + k*13);
+    }
+    g.restore();
+
+    // logo（手写图，斜 -7°）
+    if (logoReady && logoImg.width){
+      g.save();
+      g.globalAlpha = .90;
+      g.translate(1436, 300);
+      g.rotate(-7 * Math.PI / 180);
+      var lw = 470;
+      var lh = lw * logoImg.height / logoImg.width;
+      g.drawImage(logoImg, -lw/2, -lh/2, lw, lh);
+      g.restore();
+    } else {
+      g.save();
+      g.globalAlpha = .92;
+      g.translate(1436, 300);
+      g.rotate(-7 * Math.PI / 180);
+      g.textAlign = "center";
+      g.fillStyle = "rgba(12,43,44,.78)";
+      g.font = f(84, 800);
+      g.fillText("防风 Zephyr", 0, 0);
+      g.restore();
+    }
+
+    // logo 下三条递减横线
+    g.save();
+    g.strokeStyle = "rgba(12,43,44,.14)";
+    g.lineWidth = 2;
+    var lens = [400, 262, 140];
+    for (var m=0;m<lens.length;m++){
+      g.beginPath();
+      g.moveTo(1436 - lens[m]/2, 352 + m*13);
+      g.lineTo(1436 + lens[m]/2, 352 + m*13);
+      g.stroke();
+    }
+    g.restore();
+
+    // 通栏磁条
+    g.save();
+    var mg = g.createLinearGradient(0, 580, 0, 620);
+    mg.addColorStop(0,   "#4a5459");
+    mg.addColorStop(.16, "#232b2f");
+    mg.addColorStop(.5,  "#1c2428");
+    mg.addColorStop(.84, "#232b2f");
+    mg.addColorStop(1,   "#4a5459");
+    g.fillStyle = mg;
+    g.fillRect(PAD, 600, W - PAD*2, 26);
+
+    // 两道磁道
+    g.strokeStyle = "rgba(0,0,0,.28)";
+    g.lineWidth = 1.2;
+    g.beginPath(); g.moveTo(PAD, 606); g.lineTo(W-PAD, 606); g.stroke();
+    g.beginPath(); g.moveTo(PAD, 618); g.lineTo(W-PAD, 618); g.stroke();
+
+    // 沿条上沿的极淡字
+    g.fillStyle = "rgba(255,255,255,.10)";
+    g.font = f(9, 500, MONO);
+    g.textAlign = "left";
+    g.fillText("MAGNETIC STRIPE · DO NOT BEND", PAD + 4, 596);
+    g.restore();
+
+    // 底部航线行
+    g.save();
+    g.fillStyle = "rgba(12,43,44,.34)";
+    g.font = f(12, 500);
+    g.textAlign = "left";
+    g.fillText("CKG  →  C3Y", PAD, 688);
+    g.fillText(S.flight + " · 直飞 · 记名 · 不托运", PAD + 170, 688);
+
+    g.fillStyle = "rgba(12,43,44,.28)";
+    g.font = f(12, 500);
+    g.fillText("川泽生防风，清歌彻远岑", PAD, 736);
+
+    g.textAlign = "right";
+    g.font = f(11, 500, MONO);
+    g.fillText("TP-8848-" + S.date.replace(/-/g,""), W - PAD, 736);
+
+    g.textAlign = "center";
+    g.fillStyle = "rgba(12,43,44,.22)";
+    g.font = f(11, 500);
+    g.fillText("双击翻回正面", W/2, 786);
+    g.restore();
+  }
+
+  // ── 渲染调度 ───────────────────────────────────
+  function render(){
+    draw();
+    drawBack();
+    cv.style.display = showingBack ? "none" : "block";
+    cvB.style.display = showingBack ? "block" : "none";
+    document.getElementById("btnFlip").textContent = showingBack ? "翻回正面" : "翻到背面";
+  }
+
+  // ── 存图 ───────────────────────────────────────
+  function savePNG(canvas, name){
+    try {
+      var url = canvas.toDataURL("image/png");
+      var a = document.createElement("a");
+      a.download = name;
+      a.href = url;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function(){
+        document.body.removeChild(a);
+      }, 100);
+    } catch(e){
+      alert("这张票存不下来：" + (e && e.message ? e.message : e) + "\n请用系统截图代替。");
+    }
+  }
+
+  // ── 初始化 ─────────────────────────────────────
+  function initControls(){
+    var selSeat = document.getElementById("iSeat");
+    SEATS.forEach(function(p){
+      var o = document.createElement("option");
+      o.value = p[0]; o.textContent = p[1];
+      selSeat.appendChild(o);
+    });
+    selSeat.value = S.seat;
+
+    var selCls = document.getElementById("iClass");
+    CLASSES.forEach(function(p){
+      var o = document.createElement("option");
+      o.value = p[0]; o.textContent = p[1];
+      selCls.appendChild(o);
+    });
+    selCls.value = S.cls;
+
+    document.getElementById("iDate").value = S.date;
+  }
+
+  function initEvents(){
+    document.getElementById("iName").addEventListener("input", function(){
+      S.name = this.value || "防风";
+      render();
+    });
+    document.getElementById("iDate").addEventListener("change", function(){
+      S.date = this.value || S.date;
+      render();
+    });
+    document.getElementById("iGate").addEventListener("input", function(){
+      S.gate = this.value || "T3-E08";
+      render();
+    });
+    document.getElementById("iSeat").addEventListener("change", function(){
+      S.seat = this.value;
+      render();
+    });
+    document.getElementById("iClass").addEventListener("change", function(){
+      S.cls = this.value;
+      render();
+    });
+    document.getElementById("iFlight").addEventListener("input", function(){
+      S.flight = this.value || "TP-2026";
+      render();
+    });
+
+    document.getElementById("btnFlip").addEventListener("click", function(){
+      showingBack = !showingBack;
+      render();
+    });
+
+    document.getElementById("btnSave").addEventListener("click", function(){
+      var name = (showingBack ? "登机牌背面-" : "登机牌-") + tid() + ".png";
+      savePNG(showingBack ? cvB : cv, name);
+    });
+  }
+
+  initControls();
+  initEvents();
+  render();
+})();
+</script>
+</div>
+</body>
+</html>

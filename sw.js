@@ -2,7 +2,7 @@
    策略：cache-first。这套东西内容不会变，每次打开都从缓存读；
    更新时改 CACHE 版本号，旧的会在 activate 里被清掉。 */
 
-var CACHE = 'zephyr-term-v1';
+var CACHE = 'zephyr-term-v2';
 
 var SHELL = [
   './',
@@ -19,7 +19,12 @@ var SHELL = [
   './sticker/index.html',
   './baocaiming/index.html',
   './daily/index.html',
-  './card/index.html'
+  './card/index.html',
+  './boarding/index.html',
+  './boarding/canvas.html',
+  './boarding/qrlib.js',
+  './boarding/html2canvas.min.js',
+  './boarding/logo_transparent.png'
 ];
 
 self.addEventListener('install', function (e) {

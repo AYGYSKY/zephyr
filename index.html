@@ -402,7 +402,7 @@ a.row{color:inherit;text-decoration:none}
     </div>
 
     <div>
-      <div class="hint">共 <em>10</em> 个目录 · 选择一项进入</div>
+      <div class="hint">共 <em>12</em> 个目录 · 选择一项进入</div>
 
       <ul class="cat" id="cat">
 
@@ -564,6 +564,30 @@ a.row{color:inherit;text-decoration:none}
           </a>
         </li>
 
+        <li>
+          <a class="row" href="boarding/index.html">
+            <span class="no">11</span>
+            <span class="nm">
+              <span class="cn">登机牌</span>
+              <span class="en">boarding</span>
+              <span class="ds">从川泽飞出去的那张，CKG → C3Y</span>
+            </span>
+            <span class="st on">可进入</span>
+          </a>
+        </li>
+
+        <li>
+          <a class="row" href="boarding/canvas.html">
+            <span class="no">11b</span>
+            <span class="nm">
+              <span class="cn">登机牌 · Canvas</span>
+              <span class="en">boarding / canvas</span>
+              <span class="ds">同一张票画在画布上，存图不经过截图库</span>
+            </span>
+            <span class="st on">可进入</span>
+          </a>
+        </li>
+
       </ul>
     </div>
   </div>
@@ -587,7 +611,7 @@ a.row{color:inherit;text-decoration:none}
   }
   var code = ("0000" + ((h >>> 0) % 65536).toString(16).toUpperCase()).slice(-4);
 
-  /* ---------- 全通判断：8 个目录都进过，编号从 TER-M 变 TER-3 ---------- */
+  /* ---------- 全通判断：11 个目录都进过，编号从 TER-M 变 TER-3 ---------- */
   var PAGES = ["ticket", "qin", "voice", "letter", "crossroad", "sticker", "baocaiming"];
   var visited = 0;
   for (var pi = 0; pi < PAGES.length; pi++) {
@@ -606,7 +630,7 @@ a.row{color:inherit;text-decoration:none}
     if (perm) { perm.textContent = "读写"; perm.style.color = "#ffd166"; }
     var footNote = document.getElementById("footNote");
     if (footNote) footNote.textContent =
-      "终端编号由日期生成，同一天同一台设备相同 · 八个目录都走完了，这一份不再是备份";
+      "终端编号由日期生成，同一天同一台设备相同 · 七个目录都走完了，这一份不再是备份";
   }
 
   /* ---------- 日期彩蛋 ---------- */
@@ -637,7 +661,7 @@ a.row{color:inherit;text-decoration:none}
   if (isLeapDay) lines.push("⟡ 四年一次的日子。生日快乐。");
   if (isBankDay) lines.push("⟡ 今天声库上线。她终于会唱了。");
   if (onValley) lines.push("⟡ 她在路上。信号不好，见谅。");
-  if (allDone) lines.push("⟡ 八个目录全部走完。权限提升。");
+  if (allDone) lines.push("⟡ 七个目录全部走完。权限提升。");
   lines.push("");
   lines.push("镜像接入。编号 " + TID);
   lines.push("");
