@@ -1,0 +1,12 @@
+# 开发期文件，不发布到 GitHub Pages
+README.md
+注意事项.txt
+tools/
+shared/
+ticket/画面/
+preview/overview.pdf
+
+# 备份与临时文件
+*.bak
+*.bak-*
+*.tmp
