@@ -132,7 +132,7 @@ body{animation:flick 11s steps(1,end) infinite}
 /* ============ 终端 ============ */
 .shell{
   position:relative;z-index:2;
-  max-width:960px;margin:0 auto;
+  max-width:1120px;margin:0 auto;
   padding:clamp(16px,3vw,30px) clamp(14px,4vw,32px) 44px;
   opacity:0;transform:translateY(10px);
   transition:opacity .7s ease .1s, transform .7s ease .1s;
@@ -365,6 +365,119 @@ a.row{color:inherit;text-decoration:none}
   background:rgba(0,201,194,.22);border-radius:3px;
 }
 .grid > div:last-child::-webkit-scrollbar-thumb:hover{background:rgba(0,201,194,.38)}
+
+/* ============ 终端卡：主界面改版 ============ */
+/* 顶栏品牌 */
+.bar .brand{display:flex;align-items:center;gap:9px;min-width:0}
+.bar .brand .mark{
+  font-family:var(--mono);font-size:12.5px;letter-spacing:.34em;color:var(--hi);
+  font-weight:500;text-shadow:0 0 18px rgba(143,245,236,.32);
+}
+.bar .brand .cn{font-size:12px;letter-spacing:.34em;color:#cfeceb}
+.bar .brand .sl{color:rgba(0,201,194,.42)}
+
+/* 立绘：一张终端卡 */
+.portrait{
+  padding:9px;
+  border:1px solid rgba(0,201,194,.26);
+  background:
+    linear-gradient(180deg,rgba(0,201,194,.06),transparent 34%),
+    rgba(4,14,17,.55);
+}
+.portrait::before{
+  left:50%;top:44%;width:104%;
+}
+.plate{
+  display:flex;justify-content:space-between;gap:8px;
+  margin-top:9px;padding-top:7px;border-top:1px dashed rgba(0,201,194,.22);
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;color:var(--dim);
+}
+.plate b{color:var(--main);font-weight:400}
+
+/* 入口：两列卡片 */
+.hint{margin-bottom:11px}
+.tiles{
+  list-style:none;border-top:0;
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:9px;
+}
+.tiles > li{min-width:0}
+.tiles > li.wide{grid-column:1 / -1}
+.tiles > li.wide .row{
+  background:linear-gradient(100deg,rgba(0,201,194,.075),rgba(0,201,194,.015) 46%,transparent 78%);
+}
+.tiles > li.wide a.row::after{
+  content:"→";position:absolute;right:18px;bottom:11px;
+  font-family:var(--mono);font-size:13px;color:rgba(143,245,236,.4);
+}
+.tiles .row{
+  display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start;
+  padding:11px 12px 12px 10px;
+  border:1px solid rgba(0,201,194,.14);
+  border-bottom:1px solid rgba(0,201,194,.14);
+  background:linear-gradient(180deg,rgba(0,201,194,.035),transparent 72%);
+  min-height:76px;
+  transition:border-color .2s,background .2s,transform .2s,padding-left .2s;
+}
+.tiles .row:hover,.tiles .row:focus-visible,.tiles .row.open{
+  border-color:rgba(0,201,194,.42);
+  background:rgba(0,201,194,.055);
+  padding-left:10px;
+  transform:translateY(-1px);
+}
+.tiles .row .no{padding-top:1px;font-size:11px}
+.tiles .row .nm{gap:2px}
+.tiles .row .nm .cn{font-size:14.5px;letter-spacing:.05em}
+.tiles .row .nm .en{font-size:9.5px;letter-spacing:.2em}
+.tiles .row .nm .ds{font-size:11.5px;line-height:1.55;margin-top:3px;color:#7f9a9c}
+.tiles .row .st{
+  position:absolute;right:10px;top:10px;
+  font-size:9px;letter-spacing:.12em;padding-top:0;
+}
+.tiles .row{position:relative}
+.tiles .panel{border:1px solid rgba(0,201,194,.14);border-top:0;margin-top:-1px}
+.tiles .panel .inner{padding-left:16px}
+
+@media (max-width:740px){
+  .tiles{grid-template-columns:1fr}
+}
+@media (max-width:720px){
+  .tiles{grid-template-columns:1fr}
+  .portrait{padding:7px}
+  .portrait img{max-width:300px;margin:0 auto}
+}
+
+/* 桌宠控制条（只在桌面壳里出现） */
+.pet-dock{
+  position:fixed;right:20px;bottom:20px;z-index:97;
+  display:flex;align-items:center;gap:2px;
+  padding:3px;
+  border:1px solid rgba(0,201,194,.3);
+  background:rgba(4,14,17,.86);
+  backdrop-filter:blur(8px);
+  box-shadow:0 8px 28px rgba(0,0,0,.5);
+}
+.pet-dock[hidden]{display:none}
+.pet-dock button{
+  appearance:none;border:0;background:transparent;cursor:pointer;
+  font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+  color:#9fc6c5;padding:9px 14px;
+  display:flex;align-items:center;gap:8px;
+  transition:color .18s,background .18s;
+}
+.pet-dock button:hover{color:var(--hi);background:rgba(0,201,194,.1)}
+.pet-dock .dot{
+  width:6px;height:6px;border-radius:50%;
+  background:rgba(0,201,194,.45);
+  box-shadow:0 0 0 0 rgba(143,245,236,.5);
+}
+.pet-dock.on .dot{
+  background:var(--hi);
+  animation:breathe 2.4s ease-in-out infinite;
+}
+@keyframes breathe{50%{box-shadow:0 0 0 5px rgba(143,245,236,0)}}
+.pet-dock .hintkey{color:#4f6a6c;font-size:9.5px;letter-spacing:.1em;padding-right:10px}
+@media (prefers-reduced-motion:reduce){.pet-dock.on .dot{animation:none}}
 </style>
 <meta name="theme-color" content="#050c0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -382,7 +495,14 @@ a.row{color:inherit;text-decoration:none}
 
 <div class="shell" id="shell">
   <div class="bar">
-    <span><b id="tid">TER-M-0000</b> &nbsp;/&nbsp; 旅行驿站 · c3Y</span>
+    <span class="brand">
+      <b class="mark">ZEPHYR</b>
+      <span class="cn">防风</span>
+      <span class="sl">/</span>
+      <b id="tid">TER-M-0000</b>
+      <span class="sl">/</span>
+      <span>旅行驿站 · c3Y</span>
+    </span>
     <span class="ro">只读镜像</span>
   </div>
 
@@ -391,6 +511,7 @@ a.row{color:inherit;text-decoration:none}
       <div class="portrait">
         <img id="art" alt="防风 Zephyr">
       </div>
+      <div class="plate"><span><b>TER-M</b> · 防风</span><span>READ-ONLY</span></div>
       <div class="meta">
         <div class="meta-h">终端状态</div>
         <div class="meta-row"><span>镜像完整度</span><b>82%</b></div>
@@ -402,11 +523,11 @@ a.row{color:inherit;text-decoration:none}
     </div>
 
     <div>
-      <div class="hint">共 <em>12</em> 个目录 · 选择一项进入</div>
+      <div class="hint">共<em>十二</em>个入口 · 挑一个进去</div>
 
-      <ul class="cat" id="cat">
+      <ul class="tiles" id="cat">
 
-        <li>
+        <li class="wide">
           <div class="row" data-panel="archive" tabindex="0" role="button" aria-expanded="false">
             <span class="no">01</span>
             <span class="nm">
@@ -414,7 +535,7 @@ a.row{color:inherit;text-decoration:none}
               <span class="en">archive</span>
               <span class="ds">三纪元 · 三计划 · 四个地名 · 四张终端卡</span>
             </span>
-            <span class="st on">可进入</span>
+            <span class="st on">展开</span>
           </div>
           <div class="panel" id="p-archive">
             <div class="inner">
@@ -449,8 +570,8 @@ a.row{color:inherit;text-decoration:none}
               </ul>
 
               <div class="note">
-                这里只放世界观索引。立绘、三视图、声音、表情包、设定文档都在
-                <a href="../作品集/zephyr.html">角色档案页</a>，不在这里重复一遍。
+                这里只放世界观索引。立绘、三视图、声音、表情包、设定文档都在企划的
+                素材文件夹里，不在这里重复一遍。
               </div>
             </div>
           </div>
@@ -576,7 +697,7 @@ a.row{color:inherit;text-decoration:none}
           </a>
         </li>
 
-        <li>
+        <li class="wide">
           <a class="row" href="boarding/canvas.html">
             <span class="no">11b</span>
             <span class="nm">
@@ -594,8 +715,16 @@ a.row{color:inherit;text-decoration:none}
 
   <div class="foot">
     防风 Zephyr · 形象来自「防风Zephyr」企划组 · 允许非商用二次分发<br>
-    <span id="footNote">终端编号由日期生成，同一天同一台设备相同 · 这是一个只读镜像，你看到的是她留下的备份</span>
+    <span id="footNote">终端编号由日期生成，同一天同一台设备相同 · 这是一个只读镜像，你看到的是她留下的备份</span><br>
+    <span>终端 v0.2.0 · 桌面版带一只桌宠，点右下角唤出来</span>
   </div>
+</div>
+
+<div class="pet-dock" id="petDock" hidden>
+  <span class="hintkey" id="petHint">桌面版</span>
+  <button id="petBtn" type="button" aria-pressed="false">
+    <span class="dot"></span><span class="txt">唤出桌宠</span>
+  </button>
 </div>
 
 <script>
@@ -877,6 +1006,47 @@ a.row{color:inherit;text-decoration:none}
     window.addEventListener(ev, schedule, { passive: true });
   });
   schedule();
+})();
+
+/* ---------- 桌面壳：桌宠开关 ---------- */
+(function(){
+  var dock = document.getElementById("petDock");
+  var btn  = document.getElementById("petBtn");
+  if (!dock || !btn) return;
+  var txt  = btn.querySelector(".txt");
+  var core = window.__TAURI__ && window.__TAURI__.core;
+  if (!core) return;               /* 浏览器双击打开时保持隐藏 */
+
+  dock.hidden = false;
+  var running = false;
+
+  function paint(){
+    dock.classList.toggle("on", running);
+    txt.textContent = running ? "桌宠在桌面上 · 退出" : "唤出桌宠";
+    btn.setAttribute("aria-pressed", String(running));
+  }
+
+  function sync(){
+    core.invoke("pet_running").then(function(v){
+      var next = !!v;
+      if (next !== running){ running = next; paint(); }
+    }).catch(function(){});
+  }
+
+  btn.addEventListener("click", function(){
+    btn.disabled = true;
+    var p = running ? core.invoke("close_pet") : core.invoke("open_pet");
+    p.then(function(){
+      setTimeout(function(){ btn.disabled = false; sync(); }, 200);
+    }).catch(function(){
+      btn.disabled = false;
+      txt.textContent = "没唤出来，再点一次";
+      setTimeout(function(){ paint(); }, 1600);
+    });
+  });
+
+  sync();
+  setInterval(sync, 2500);
 })();
 </script>
 <script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').catch(function(){})})}</script>

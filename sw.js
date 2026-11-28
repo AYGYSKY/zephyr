@@ -2,7 +2,7 @@
    策略：cache-first。这套东西内容不会变，每次打开都从缓存读；
    更新时改 CACHE 版本号，旧的会在 activate 里被清掉。 */
 
-var CACHE = 'zephyr-term-v2';
+var CACHE = 'zephyr-term-v4';
 
 var SHELL = [
   './',
@@ -17,6 +17,7 @@ var SHELL = [
   './ticket/index.html',
   './crossroad/index.html',
   './sticker/index.html',
+  './sticker/data.js',
   './baocaiming/index.html',
   './daily/index.html',
   './card/index.html',
@@ -48,11 +49,22 @@ self.addEventListener('activate', function (e) {
   );
 });
 
+/* 只接管终端站自己的这些页面。桌面壳里的 pet.html、assets/ 之类不归它管：
+   以前它把 /pet.html 也拦下来缓存，桌宠窗口拿到的其实是首页。 */
+var OWNED = SHELL.concat(['./sw.js', './manifest.json']).map(function (u) {
+  return new URL(u, self.location.href).pathname;
+});
+
+function owns(path) {
+  return OWNED.indexOf(path) !== -1;
+}
+
 self.addEventListener('fetch', function (e) {
   var req = e.request;
   if (req.method !== 'GET') return;
   var url = new URL(req.url);
   if (url.origin !== location.origin) return;
+  if (!owns(url.pathname)) return;
 
   e.respondWith(
     caches.match(req, { ignoreSearch: true }).then(function (hit) {

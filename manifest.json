@@ -1,7 +1,7 @@
 {
   "name": "防风 Zephyr · 旅行驿站",
   "short_name": "旅行驿站",
-  "description": "终端站 · 八个能动手的页面",
+  "description": "终端站 · 十二个能动手的页面",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
